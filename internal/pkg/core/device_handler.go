@@ -817,6 +817,7 @@ func (dh *DeviceHandler) doStateInit(ctx context.Context) error {
 // postInit create olt client instance to invoke RPC on the olt device
 func (dh *DeviceHandler) postInit(ctx context.Context) error {
 	dh.Client = oop.NewOpenoltClient(dh.clientCon)
+	dh.bossClient = boo.NewBossOpenoltClient(dh.clientCon)
 	dh.transitionMap.Handle(ctx, GrpcConnected)
 	return nil
 }
@@ -4211,6 +4212,19 @@ func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) 
           logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
       }
       response, err := dh.bossClient.GetSlaV2(ctx, request)
+      if err!=nil{
+          return nil, err
+      }
+      return response, nil
+}
+func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossRequest) (*boo.BossOmciResponse, error){                 
+      var err error
+      if dh.bossClient !=nil{
+          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
+      }else{
+          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
+      }
+      response, err := dh.bossClient.SendOmciData(ctx, request)
       if err!=nil{
           return nil, err
       }

@@ -1584,4 +1584,18 @@ func (oo *OpenOLT) GetSlaV2(ctx context.Context, request *bossopenolt.BossReques
     }
     return resp, nil
 }
+func (oo *OpenOLT) SendOmciData(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.BossOmciResponse, error) {
+    var err error
+    resp := new(bossopenolt.BossOmciResponse)
+    deviceID := request.DeviceId
+    logger.Infow(ctx, "SendOmciData", log.Fields{"device-id": request.DeviceId, "request": request})
+    if handler := oo.getDeviceHandler(deviceID); handler != nil {
+        if resp, err = handler.SendOmciData(ctx, request); err != nil {
+            logger.Infow(ctx, "SendOmciData_Error", log.Fields{"device-id": request.DeviceId, "request": request})
+
+            return nil, err
+        }
+    }
+    return resp, nil
+}
 
