@@ -4162,7 +4162,7 @@ func (dh *DeviceHandler) CreateDeviceHandler(ctx context.Context, device *voltha
 	return nil
 
 }
-func(dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){                 
+func(dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4176,7 +4176,7 @@ func(dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest
       return response, nil
 }
 
-func(dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.GetSliceBwResponse, error){                 
+func(dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.GetSliceBwResponse, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4190,7 +4190,7 @@ func(dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest
       return response, nil
 }
 
-func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){                 
+func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4204,7 +4204,7 @@ func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) 
       return response, nil
 }
 
-func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){                 
+func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4217,7 +4217,7 @@ func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) 
       }
       return response, nil
 }
-func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossRequest) (*boo.BossOmciResponse, error){                 
+func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossRequest) (*boo.BossOmciResponse, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4226,6 +4226,7 @@ func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossReque
       }
       response, err := dh.bossClient.SendOmciData(ctx, request)
       if err!=nil{
+          logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error":err})
           return nil, err
       }
       return response, nil

@@ -1523,7 +1523,7 @@ func (oo *OpenOLT) CreateDeviceHandler(ctx context.Context, device *voltha.Devic
 		// Launch the creation of the device topic
 		// go oo.createDeviceTopic(device)
 	}
-	return nil,nil
+	return &empty.Empty{},nil
 }
 func (oo *OpenOLT) SetSliceBw(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.ExecResult, error) {
     var err error
