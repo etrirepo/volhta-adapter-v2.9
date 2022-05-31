@@ -4231,3 +4231,19 @@ func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossReque
       }
       return response, nil
 }
+func(dh *DeviceHandler) SendActiveOnu(ctx context.Context, request *voltha.ActiveOnu)error{
+  serialNum:= oop.SerialNumber{VendorId: []byte(""), VendorSpecific: []byte("")}
+  Onu := oop.Onu{IntfId: request.IntfId, OnuId: request.OnuId, SerialNumber: &serialNum, Pir: request.Pir, OmccEncryption: request.OmccEncryption}
+  if _, err := dh.Client.ActivateOnu(ctx, &Onu); err != nil {
+    st, _ := status.FromError(err)
+    if st.Code() == codes.AlreadyExists {
+      logger.Debugw(ctx, "onu-activation-in-progress", log.Fields{"SerialNumber": serialNum, "onu-id": request.OnuId, "device-id": dh.device.Id})
+
+    } else {
+      return olterrors.NewErrAdapter("onu-activate-failed", log.Fields{"onu": Onu, "device-id": dh.device.Id}, err)
+    }
+  } else {
+    logger.Infow(ctx, "activated-onu", log.Fields{"SerialNumber": serialNum, "device-id": dh.device.Id})
+  }
+  return  nil
+}

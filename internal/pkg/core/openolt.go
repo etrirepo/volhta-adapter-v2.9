@@ -1598,4 +1598,16 @@ func (oo *OpenOLT) SendOmciData(ctx context.Context, request *bossopenolt.BossRe
     }
     return resp, nil
 }
-
+func (oo *OpenOLT) SendActiveOnu(ctx context.Context, device *voltha.ActiveOnu)(*empty.Empty, error) {
+  deviceId := device.DeviceId
+  logger.Infow(ctx, "SendActiveOnu", log.Fields{"device id": device.DeviceId, "request": device})
+  if handler := oo.getDeviceHandler(deviceId); handler!=nil{
+    logger.Infow(ctx, "SendActiveOnu Device Handler is Not NULL", log.Fields{"device id": device.DeviceId, "request": device})
+    if err:= handler.SendActiveOnu(ctx, device); err!=nil{
+      return nil, err
+    }
+  }else{
+    logger.Infow(ctx, "SendActiveOnu Device Handler is NULL", log.Fields{"device id": device.DeviceId, "request": device})
+  }
+	return &empty.Empty{},nil
+}
