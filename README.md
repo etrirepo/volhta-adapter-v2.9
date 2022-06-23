@@ -1,3 +1,4 @@
+이 브랜치는 2022년 7월 12일에 있을 시험에 대비하여, VOLTHA의 OLT 처리과정이 아닌 createDeviceHandler를 통한 ONU제어를 위한 브랜치이다.
 # OpenOLT adapter
 
 The OpenOLT adapter connects the [VOLTHA
