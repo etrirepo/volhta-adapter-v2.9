@@ -544,6 +544,7 @@ func (dh *DeviceHandler) handleOltIndication(ctx context.Context, oltIndication 
 
 // nolint: gocyclo
 func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.Indication) {
+  logger.Debugw(ctx, "Check Recevice Indication", log.Fields{"Indication":indication})
 	raisedTs := time.Now().Unix()
 	switch indication.Data.(type) {
 	case *oop.Indication_OltInd:
@@ -960,6 +961,75 @@ func (dh *DeviceHandler) populateDeviceInfo(ctx context.Context) (*oop.DeviceInf
 		return nil, olterrors.NewErrInvalidValue(log.Fields{"device": nil}, nil)
 	}
 
+//  if &deviceInfo.OnuIdStart ==nil{
+//    logger.Debugw(ctx, "OnuIdStart nil", log.Fields{"device-id": dh.device.Id})
+//
+//    deviceInfo.OnuIdStart = 0
+//  }
+//  if &deviceInfo.OnuIdEnd ==nil{
+//    logger.Debugw(ctx, "OnuIdEnd nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.OnuIdEnd = deviceInfo.OnuIdStart+31
+//  }
+//  if &deviceInfo.AllocIdStart ==nil{
+//    logger.Debugw(ctx, "AllocIdStart nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.AllocIdStart =1024
+//  }
+//  if &deviceInfo.AllocIdEnd ==nil{
+//    logger.Debugw(ctx, "AllocIdEnd nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.AllocIdEnd =deviceInfo.AllocIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4
+//  }
+//  if &deviceInfo.GemportIdStart ==nil{
+//    logger.Debugw(ctx, "GemportIdStart nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.GemportIdStart= 1024
+//  }
+//  if &deviceInfo.GemportIdEnd ==nil{
+//    logger.Debugw(ctx, "GemportIdEnd nil", log.Fields{"device-id": dh.device.Id}  )
+//    deviceInfo.GemportIdEnd = deviceInfo.GemportIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4 * 8
+//
+//  }
+//  if &deviceInfo.FlowIdStart == nil{
+//    logger.Debugw(ctx, "FlowIdStart nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.FlowIdStart=1
+//  }
+//  if &deviceInfo.FlowIdEnd ==nil{
+//    logger.Debugw(ctx, "FlowIdEnd nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.FlowIdEnd = deviceInfo.FlowIdStart+1
+//  }
+//  if deviceInfo.Ranges ==nil||len(deviceInfo.Ranges)==0{
+//    logger.Debugw(ctx, "deviceRange nil", log.Fields{"device-id": dh.device.Id})
+//    deviceInfo.Ranges= []*oop.DeviceInfo_DeviceResourceRanges{
+//       {
+//         IntfIds:    []uint32{0},
+//         Technology: "XGS-PON",
+//         Pools: []*oop.DeviceInfo_DeviceResourceRanges_Pool{
+//           {
+//             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ONU_ID,
+//             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+//             Start:   deviceInfo.OnuIdStart,
+//             End:     deviceInfo.OnuIdEnd,
+//           },
+//           {
+//             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ALLOC_ID,
+//             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+//             Start:   deviceInfo.AllocIdStart,
+//             End:     deviceInfo.AllocIdEnd,
+//           },
+//           {
+//             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_GEMPORT_ID,
+//             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+//             Start:   deviceInfo.GemportIdStart,
+//             End:     deviceInfo.GemportIdEnd,
+//           },
+//           {
+//             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_FLOW_ID,
+//             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_SHARED_BY_ALL_INTF_ALL_TECH,
+//             Start:   deviceInfo.FlowIdStart,
+//             End:     deviceInfo.FlowIdEnd,
+//           },
+//         },
+//       },
+//     }
+//  }
 	logger.Debugw(ctx, "fetched-device-info", log.Fields{"deviceInfo": deviceInfo, "device-id": dh.device.Id})
 	dh.device.Root = true
 	dh.device.Vendor = deviceInfo.Vendor
@@ -1483,17 +1553,17 @@ func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.
 	case "up", "down":
 		logger.Debugw(ctx, "sending-interadapter-onu-indication", log.Fields{"onuIndication": onuInd, "device-id": onuDevice.Id, "operStatus": onuDevice.OperStatus, "adminStatus": onuDevice.AdminState})
 
-		err := dh.sendOnuIndicationToChildAdapter(ctx, onuDevice.AdapterEndpoint, &ia.OnuIndicationMessage{
-			DeviceId:      onuDevice.Id,
-			OnuIndication: onuInd,
-		})
-		if err != nil {
-			return olterrors.NewErrCommunication("inter-adapter-send-failed", log.Fields{
-				"onu-indicator": onuInd,
-				"source":        dh.openOLT.config.AdapterEndpoint,
-				"device-type":   onuDevice.Type,
-				"device-id":     onuDevice.Id}, err)
-		}
+//		err := dh.sendOnuIndicationToChildAdapter(ctx, onuDevice.AdapterEndpoint, &ia.OnuIndicationMessage{
+//			DeviceId:      onuDevice.Id,
+//			OnuIndication: onuInd,
+//		})
+//		if err != nil {
+//			return olterrors.NewErrCommunication("inter-adapter-send-failed", log.Fields{
+//				"onu-indicator": onuInd,
+//				"source":        dh.openOLT.config.AdapterEndpoint,
+//				"device-type":   onuDevice.Type,
+//				"device-id":     onuDevice.Id}, err)
+//		}
 	default:
 		return olterrors.NewErrInvalidValue(log.Fields{"oper-state": onuInd.OperState}, nil)
 	}
