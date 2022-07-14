@@ -1555,9 +1555,9 @@ func (oo *OpenOLT) GetSliceBw(ctx context.Context, request *bossopenolt.BossRequ
     return resp, nil
 }
 
-func (oo *OpenOLT) SetSlaV2(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.SlaV2Response, error) {
+func (oo *OpenOLT) SetSlaV2(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.RepeatedSlaV2Response, error) {
     var err error
-    resp := new(bossopenolt.SlaV2Response)
+    resp := new(bossopenolt.RepeatedSlaV2Response)
     deviceID := request.DeviceId
     logger.Infow(ctx, "SetSlaV2", log.Fields{"device-id": request.DeviceId, "request": request})
     if handler := oo.getDeviceHandler(deviceID); handler != nil {
@@ -1570,9 +1570,9 @@ func (oo *OpenOLT) SetSlaV2(ctx context.Context, request *bossopenolt.BossReques
     return resp, nil
 }
 
-func (oo *OpenOLT) GetSlaV2(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.SlaV2Response, error) {
+func (oo *OpenOLT) GetSlaV2(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.RepeatedSlaV2Response, error) {
     var err error
-    resp := new(bossopenolt.SlaV2Response)
+    resp := new(bossopenolt.RepeatedSlaV2Response)
     deviceID := request.DeviceId
     logger.Infow(ctx, "GetSlaV2", log.Fields{"device-id": request.DeviceId, "request": request})
     if handler := oo.getDeviceHandler(deviceID); handler != nil {
@@ -1610,4 +1610,20 @@ func (oo *OpenOLT) SendActiveOnu(ctx context.Context, device *voltha.ActiveOnu)(
     logger.Infow(ctx, "SendActiveOnu Device Handler is NULL", log.Fields{"device id": device.DeviceId, "request": device})
   }
 	return &empty.Empty{},nil
+}
+
+func (oo *OpenOLT) SendOmciDatav2(ctx context.Context, msg *voltha.OmciDatav2)(*empty.Empty, error){
+  deviceId := msg.DeviceId
+  logger.Infow(ctx, "SendOmciDatav2", log.Fields{"device id": msg.DeviceId, "request": msg})
+  if handler := oo.getDeviceHandler(deviceId); handler!=nil{
+    logger.Infow(ctx, "SendOmciDatav2 Device Handler is Not NULL", log.Fields{"device id": msg.DeviceId, "request": msg})
+    if err:= handler.SendOmciDatav2(ctx, msg); err!=nil{
+      return nil, err
+    }
+  }else{
+    logger.Infow(ctx, "SendOmciDatav2 Device Handler is NULL", log.Fields{"device id": msg.DeviceId, "request": msg})
+    return nil,olterrors.ErrNotImplemented
+  }
+	return &empty.Empty{},nil
+
 }
