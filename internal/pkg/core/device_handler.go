@@ -59,6 +59,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+//  omcilib "github.com/opencord/Delta/common/omci"
 )
 
 // Constants for number of retries and for timeout
@@ -185,7 +186,7 @@ func NewOnuDevice(devID, deviceTp, serialNum string, onuID, intfID uint32, proxy
 //NewDeviceHandler creates a new device handler
 func NewDeviceHandler(cc *vgrpc.Client, ep eventif.EventProxy, device *voltha.Device, adapter *OpenOLT, cm *config.ConfigManager, cfg *conf.AdapterFlags) *DeviceHandler {
 	var dh DeviceHandler
-  onuTempId = 0
+  onuTempId = 1
 	dh.cm = cm
 	dh.coreClient = cc
 	dh.EventProxy = ep
@@ -4169,7 +4170,8 @@ func (dh *DeviceHandler) CreateDeviceHandler(ctx context.Context, device *voltha
   logger.Debugw(ctx, "Send GetDeviceInfo Function!", log.Fields{"device-id": dh.device.Id})
   deviceInfo, err = dh.Client.GetDeviceInfo(log.WithSpanFromContext(context.Background(), ctx), new(oop.Empty))
   logger.Debugw(ctx,"Print DeviceInfo", log.Fields{"device_id":dh.device.Id, "DeviceInfo":deviceInfo})
-  dh.device.MacAddress = deviceInfo.DeviceId
+  //dh.device.MacAddress = deviceInfo.DeviceId
+  _ = deviceInfo
   logger.Debugw(ctx, "Received GetDeviceInfo response", log.Fields{"device-id": dh.device.Id})
 
 //  if err := dh.initializeDeviceHandlerModules(ctx); err != nil {
@@ -4317,7 +4319,7 @@ func(dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest
       return response, nil
 }
 
-func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){
+func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4331,7 +4333,7 @@ func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) 
       return response, nil
 }
 
-func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.SlaV2Response, error){
+func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error){
       var err error
       if dh.bossClient !=nil{
           logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
@@ -4351,6 +4353,9 @@ func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossReque
       }else{
           logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
       }
+      //data:=[]byte(request.Param.GetSendomcidataParam().OmciData)
+      //s1, s2, err := omcilib.ParseOpenOltOmciPacket(data)
+      //logger.Debugw(ctx,"SendOmciData.", log.Fields{"Omci Detail": s1})
       response, err := dh.bossClient.SendOmciData(ctx, request)
       if err!=nil{
           logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error":err})
@@ -4373,4 +4378,25 @@ func(dh *DeviceHandler) SendActiveOnu(ctx context.Context, request *voltha.Activ
     logger.Infow(ctx, "activated-onu", log.Fields{"SerialNumber": serialNum, "device-id": dh.device.Id})
   }
   return  nil
+}
+
+func(dh *DeviceHandler) SendOmciDatav2(ctx context.Context, request *voltha.OmciDatav2) error{
+      var err error
+      if dh.bossClient !=nil{
+          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
+      }else{
+          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
+      }
+      requestMsg:=&oop.OmciMsg{
+        IntfId: request.IntfId,
+        OnuId: request.OnuId,
+        Pkt: []byte(request.Pkt),
+      }
+      _, err = dh.Client.OmciMsgOut(ctx, requestMsg)
+      if err!=nil{
+          logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error":err})
+          return  err
+      }
+
+      return nil
 }
