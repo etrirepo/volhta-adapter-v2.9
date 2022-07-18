@@ -1086,62 +1086,62 @@ func (dh *DeviceHandler) GetTechProfileDownloadMessage(ctx context.Context, requ
 
 func (dh *DeviceHandler) omciIndication(ctx context.Context, omciInd *oop.OmciIndication) error {
 	logger.Debugw(ctx, "omci-indication", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "parent-device-id": dh.device.Id})
-	var deviceType string
-	var deviceID string
-	var proxyDeviceID string
-	var childAdapterEndpoint string
+//	var deviceType string
+//	var deviceID string
+//	var proxyDeviceID string
+//	var childAdapterEndpoint string
 
 	transid := extractOmciTransactionID(omciInd.Pkt)
 	if logger.V(log.DebugLevel) {
 		logger.Debugw(ctx, "recv-omci-msg", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id,
 			"omci-transaction-id": transid, "omci-msg": hex.EncodeToString(omciInd.Pkt)})
 	}
-
-	onuKey := dh.formOnuKey(omciInd.IntfId, omciInd.OnuId)
-
-	if onuInCache, ok := dh.onus.Load(onuKey); !ok {
-
-		logger.Debugw(ctx, "omci-indication-for-a-device-not-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
-		ponPort := plt.IntfIDToPortNo(omciInd.GetIntfId(), voltha.Port_PON_OLT)
-
-		onuDevice, err := dh.getChildDeviceFromCore(ctx, &ca.ChildDeviceFilter{
-			ParentId:     dh.device.Id,
-			OnuId:        omciInd.OnuId,
-			ParentPortNo: ponPort,
-		})
-		if err != nil {
-			return olterrors.NewErrNotFound("onu", log.Fields{
-				"intf-id": omciInd.IntfId,
-				"onu-id":  omciInd.OnuId}, err)
-		}
-		deviceType = onuDevice.Type
-		deviceID = onuDevice.Id
-		proxyDeviceID = onuDevice.ProxyAddress.DeviceId
-		childAdapterEndpoint = onuDevice.AdapterEndpoint
-		//if not exist in cache, then add to cache.
-		dh.onus.Store(onuKey, NewOnuDevice(deviceID, deviceType, onuDevice.SerialNumber, omciInd.OnuId, omciInd.IntfId, proxyDeviceID, false, onuDevice.AdapterEndpoint))
-	} else {
-		//found in cache
-		logger.Debugw(ctx, "omci-indication-for-a-device-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
-		deviceType = onuInCache.(*OnuDevice).deviceType
-		deviceID = onuInCache.(*OnuDevice).deviceID
-		proxyDeviceID = onuInCache.(*OnuDevice).proxyDeviceID
-		childAdapterEndpoint = onuInCache.(*OnuDevice).adapterEndpoint
-	}
-
-	if err := dh.sendOmciIndicationToChildAdapter(ctx, childAdapterEndpoint, &ia.OmciMessage{
-		ParentDeviceId: proxyDeviceID,
-		ChildDeviceId:  deviceID,
-		Message:        omciInd.Pkt,
-	}); err != nil {
-		return olterrors.NewErrCommunication("omci-request", log.Fields{
-			"source":          dh.openOLT.config.AdapterEndpoint,
-			"device-type":     deviceType,
-			"destination":     childAdapterEndpoint,
-			"onu-id":          deviceID,
-			"proxy-device-id": proxyDeviceID}, err)
-	}
-	return nil
+  return nil
+//	onuKey := dh.formOnuKey(omciInd.IntfId, omciInd.OnuId)
+//
+//	if onuInCache, ok := dh.onus.Load(onuKey); !ok {
+//
+//		logger.Debugw(ctx, "omci-indication-for-a-device-not-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
+//		ponPort := plt.IntfIDToPortNo(omciInd.GetIntfId(), voltha.Port_PON_OLT)
+//
+//		onuDevice, err := dh.getChildDeviceFromCore(ctx, &ca.ChildDeviceFilter{
+//			ParentId:     dh.device.Id,
+//			OnuId:        omciInd.OnuId,
+//			ParentPortNo: ponPort,
+//		})
+//		if err != nil {
+//			return olterrors.NewErrNotFound("onu", log.Fields{
+//				"intf-id": omciInd.IntfId,
+//				"onu-id":  omciInd.OnuId}, err)
+//		}
+//		deviceType = onuDevice.Type
+//		deviceID = onuDevice.Id
+//		proxyDeviceID = onuDevice.ProxyAddress.DeviceId
+//		childAdapterEndpoint = onuDevice.AdapterEndpoint
+//		//if not exist in cache, then add to cache.
+//		dh.onus.Store(onuKey, NewOnuDevice(deviceID, deviceType, onuDevice.SerialNumber, omciInd.OnuId, omciInd.IntfId, proxyDeviceID, false, onuDevice.AdapterEndpoint))
+//	} else {
+//		//found in cache
+//		logger.Debugw(ctx, "omci-indication-for-a-device-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
+//		deviceType = onuInCache.(*OnuDevice).deviceType
+//		deviceID = onuInCache.(*OnuDevice).deviceID
+//		proxyDeviceID = onuInCache.(*OnuDevice).proxyDeviceID
+//		childAdapterEndpoint = onuInCache.(*OnuDevice).adapterEndpoint
+//	}
+//
+//	if err := dh.sendOmciIndicationToChildAdapter(ctx, childAdapterEndpoint, &ia.OmciMessage{
+//		ParentDeviceId: proxyDeviceID,
+//		ChildDeviceId:  deviceID,
+//		Message:        omciInd.Pkt,
+//	}); err != nil {
+//		return olterrors.NewErrCommunication("omci-request", log.Fields{
+//			"source":          dh.openOLT.config.AdapterEndpoint,
+//			"device-type":     deviceType,
+//			"destination":     childAdapterEndpoint,
+//			"onu-id":          deviceID,
+//			"proxy-device-id": proxyDeviceID}, err)
+//	}
+//	return nil
 }
 
 // //ProcessInterAdapterMessage sends the proxied messages to the target device
@@ -4289,6 +4289,26 @@ func(dh *DeviceHandler) handleIndication_custom(ctx context.Context, indication 
 		  logger.Infow(ctx, "received-onu-discovery-indication", log.Fields{"OnuDiscInd": onuDiscInd, "device-id": dh.device.Id})
 		//put message  to channel and return immediately
 		  dh.putOnuIndicationToChannel(ctx, indication, onuDiscInd.GetIntfId())
+ 	case *oop.Indication_OnuInd:
+		span, ctx := log.CreateChildSpan(ctx, "onu-indication", log.Fields{"device-id": dh.device.Id})
+		defer span.Finish()
+
+		onuInd := indication.GetOnuInd()
+		logger.Infow(ctx, "received-onu-indication", log.Fields{"OnuInd": onuInd, "device-id": dh.device.Id})
+		//put message  to channel and return immediately
+		//dh.putOnuIndicationToChannel(ctx, indication, onuInd.GetIntfId())
+	case *oop.Indication_OmciInd:
+		span, ctx := log.CreateChildSpan(ctx, "omci-indication", log.Fields{"device-id": dh.device.Id})
+		defer span.Finish()
+
+		omciInd := indication.GetOmciInd()
+		logger.Debugw(ctx, "received-omci-indication", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
+		go func() {
+			if err := dh.omciIndication(ctx, omciInd); err != nil {
+				_ = olterrors.NewErrAdapter("handle-indication-error", log.Fields{"type": "omci", "device-id": dh.device.Id}, err).Log()
+			}
+		}()
+
   }
 }
 func(dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
