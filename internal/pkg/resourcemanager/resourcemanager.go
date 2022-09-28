@@ -239,6 +239,17 @@ func NewResourceMgr(ctx context.Context, PonIntfID uint32, deviceID string, KVSt
 					logger.Fatal(ctx, "failed-to-initialize-device-resource-pool-intf-id-%v-device-id", ResourceMgr.PonIntfID, ResourceMgr.DeviceID)
 					return nil
 				}
+        if devInfo.Technology=="ETRI-PON"{
+          path:=fmt.Sprintf("%s","dba")
+          if err = ResourceMgr.KVStore.Put(ctx, path, "etri_dba_sample"); err !=nil{
+            logger.Errorf(ctx, "Failed to put resource from custom resource code path: %s",path)
+            return nil
+          }
+          etcdList , errKv := ResourceMgr.KVStore.List(ctx, "")
+          logger.Debugw(ctx,"Boss Etcd List !!!", log.Fields{"etcdList" : etcdList})
+     //   	ResourceMgr.KVStore.updateLiveness(ctx, ResourceMgr.KVStore.isErrorIndicatingAliveKvstore(ctx, errKv))
+          _ =errKv
+        }
 			}
 		}
 	}

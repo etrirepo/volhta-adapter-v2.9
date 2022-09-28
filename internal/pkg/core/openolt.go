@@ -22,7 +22,8 @@ import (
 	"errors"
 	"sync"
 	"time"
-
+  "fmt"
+  "strings"
 	"github.com/golang/protobuf/ptypes/empty"
 	conf "github.com/opencord/voltha-lib-go/v7/pkg/config"
 	"github.com/opencord/voltha-lib-go/v7/pkg/events/eventif"
@@ -1625,5 +1626,18 @@ func (oo *OpenOLT) SendOmciDatav2(ctx context.Context, msg *voltha.OmciDatav2)(*
     return nil,olterrors.ErrNotImplemented
   }
 	return &empty.Empty{},nil
+
+}
+func (oo *OpenOLT) GetEtcdList(ctx context.Context, id *voltha.ID)(*voltha.EtcdList, error){
+  deviceId := id.Id
+  logger.Infow(ctx, "GetEtcdList", log.Fields{"device id": id})
+  if handler := oo.getDeviceHandler(strings.Replace(fmt.Sprintf("%s",deviceId),"\\","",-1)); handler!=nil{
+  //if handler := oo.getDeviceHandler(strings.Replace(fmt.Sprintf("%s",deviceId),"\\","",-1)); handler!=nil{
+    logger.Infow(ctx, "GetEtcdList Device Handler is Not NULL", log.Fields{"device id": id})
+    return handler.getEtcdList(ctx);
+  }else{
+    logger.Infow(ctx, "GetEtcdList Device Handler is NULL", log.Fields{"device id": id})
+    return nil,olterrors.ErrNotImplemented
+  }
 
 }

@@ -130,6 +130,7 @@ const (
 	xgspon = "XGS-PON"
 	xgpon  = "XGPON"
 	gpon   = "GPON"
+  etripon = "ETRI-PON"
 	epon   = "EPON"
 )
 
@@ -229,7 +230,7 @@ func (t *TechProfileMgr) GetTechProfileInstanceKey(ctx context.Context, tpID uin
 func (t *TechProfileMgr) GetTPInstance(ctx context.Context, path string) (interface{}, error) {
 	tech := t.resourceMgr.GetTechnology()
 	switch tech {
-	case xgspon, xgpon, gpon:
+	case xgspon, xgpon, gpon, etripon:
 		t.tpInstanceMapLock.RLock()
 		defer t.tpInstanceMapLock.RUnlock()
 		tpInst, ok := t.tpInstanceMap[path]
@@ -504,7 +505,7 @@ func (t *TechProfileMgr) GetGemportForPbit(ctx context.Context, tp interface{}, 
 func (t *TechProfileMgr) FindAllTpInstances(ctx context.Context, oltDeviceID string, tpID uint32, intfID uint32, onuID uint32) interface{} {
 	onuTpInstancePathSuffix := fmt.Sprintf("%s/%d/olt-{%s}/pon-{%d}/onu-{%d}", t.resourceMgr.GetTechnology(), tpID, oltDeviceID, intfID, onuID)
 	tech := t.resourceMgr.GetTechnology()
-	if tech == xgspon || tech == xgpon || tech == gpon {
+	if tech == xgspon || tech == xgpon || tech == gpon||tech==etripon {
 		t.tpInstanceMapLock.RLock()
 		defer t.tpInstanceMapLock.RUnlock()
 		tpInstancesTech := make([]tp_pb.TechProfileInstance, 0)
@@ -1422,7 +1423,7 @@ func (t *TechProfileMgr) reconcileTpInstancesToCache(ctx context.Context) error 
 	defer cancel()
 	kvPairs, _ := t.config.ResourceInstanceKVBacked.List(newCtx, tech)
 
-	if tech == xgspon || tech == xgpon || tech == gpon {
+	if tech == xgspon || tech == xgpon || tech == gpon||tech==etripon{
 		for keyPath, kvPair := range kvPairs {
 			logger.Debugw(ctx, "attempting-to-reconcile-tp-instance-from-resource-instance", log.Fields{"resourceInstPath": keyPath})
 			if value, err := kvstore.ToByte(kvPair.Value); err == nil {

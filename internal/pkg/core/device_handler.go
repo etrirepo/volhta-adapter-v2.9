@@ -59,6 +59,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+//  "github.com/opencord/voltha-lib-go/v7/pkg/db/kvstore"
+
 )
 
 // Constants for number of retries and for timeout
@@ -1019,7 +1021,7 @@ func (dh *DeviceHandler) populateDeviceInfo(ctx context.Context) (*oop.DeviceInf
     logger.Debugw(ctx, "FlowIdStart, FlowIdEnd 0", log.Fields{"device-id": dh.device.Id})
     deviceInfo.FlowIdStart=1
     deviceInfo.FlowIdEnd=2
-    deviceInfo.Technology="XGS-PON"
+    deviceInfo.Technology="ETRI-PON"
   }
 //  if &deviceInfo.FlowIdEnd ==nil{
 //    logger.Debugw(ctx, "FlowIdEnd nil", log.Fields{"device-id": dh.device.Id})
@@ -1030,7 +1032,7 @@ func (dh *DeviceHandler) populateDeviceInfo(ctx context.Context) (*oop.DeviceInf
     deviceInfo.Ranges= []*oop.DeviceInfo_DeviceResourceRanges{
        {
          IntfIds:    []uint32{0},
-         Technology: "XGS-PON",
+         Technology: "ETRI-PON",
          Pools: []*oop.DeviceInfo_DeviceResourceRanges_Pool{
            {
              Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ONU_ID,
@@ -1182,73 +1184,73 @@ func (dh *DeviceHandler) GetTechProfileDownloadMessage(ctx context.Context, requ
 
 func (dh *DeviceHandler) omciIndication(ctx context.Context, omciInd *oop.OmciIndication) error {
 	logger.Debugw(ctx, "omci-indication", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "parent-device-id": dh.device.Id})
-//	var deviceType string
-//	var deviceID string
-//	var proxyDeviceID string
-//	var childAdapterEndpoint string
+	var deviceType string
+	var deviceID string
+	var proxyDeviceID string
+	var childAdapterEndpoint string
 
 	transid := extractOmciTransactionID(omciInd.Pkt)
 	if logger.V(log.DebugLevel) {
 		logger.Debugw(ctx, "recv-omci-msg", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id,
 			"omci-transaction-id": transid, "omci-msg": hex.EncodeToString(omciInd.Pkt)})
 	}
-  return nil
-//	onuKey := dh.formOnuKey(omciInd.IntfId, omciInd.OnuId)
-//
-//	if onuInCache, ok := dh.onus.Load(onuKey); !ok {
-//
-//		logger.Debugw(ctx, "omci-indication-for-a-device-not-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
-//		ponPort := plt.IntfIDToPortNo(omciInd.GetIntfId(), voltha.Port_PON_OLT)
-//
-//		onuDevice, err := dh.getChildDeviceFromCore(ctx, &ca.ChildDeviceFilter{
-//			ParentId:     dh.device.Id,
-//			OnuId:        omciInd.OnuId,
-//			ParentPortNo: ponPort,
-//		})
-//		if err != nil {
-//			return olterrors.NewErrNotFound("onu", log.Fields{
-//				"intf-id": omciInd.IntfId,
-//				"onu-id":  omciInd.OnuId}, err)
-//		}
-//		deviceType = onuDevice.Type
-//		deviceID = onuDevice.Id
-//		proxyDeviceID = onuDevice.ProxyAddress.DeviceId
-//		childAdapterEndpoint = onuDevice.AdapterEndpoint
-//		//if not exist in cache, then add to cache.
-//		dh.onus.Store(onuKey, NewOnuDevice(deviceID, deviceType, onuDevice.SerialNumber, omciInd.OnuId, omciInd.IntfId, proxyDeviceID, false, onuDevice.AdapterEndpoint))
-//	} else {
-//		//found in cache
-//		logger.Debugw(ctx, "omci-indication-for-a-device-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
-//		deviceType = onuInCache.(*OnuDevice).deviceType
-//		deviceID = onuInCache.(*OnuDevice).deviceID
-//		proxyDeviceID = onuInCache.(*OnuDevice).proxyDeviceID
-//		childAdapterEndpoint = onuInCache.(*OnuDevice).adapterEndpoint
-//	}
-//
-//	if err := dh.sendOmciIndicationToChildAdapter(ctx, childAdapterEndpoint, &ia.OmciMessage{
-//		ParentDeviceId: proxyDeviceID,
-//		ChildDeviceId:  deviceID,
-//		Message:        omciInd.Pkt,
-//	}); err != nil {
-//		return olterrors.NewErrCommunication("omci-request", log.Fields{
-//			"source":          dh.openOLT.config.AdapterEndpoint,
-//			"device-type":     deviceType,
-//			"destination":     childAdapterEndpoint,
-//			"onu-id":          deviceID,
-//			"proxy-device-id": proxyDeviceID}, err)
-//	}
-//	return nil
-}
+//  return nil
+	onuKey := dh.formOnuKey(omciInd.IntfId, omciInd.OnuId)
 
+	if onuInCache, ok := dh.onus.Load(onuKey); !ok {
+
+		logger.Debugw(ctx, "omci-indication-for-a-device-not-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
+		ponPort := plt.IntfIDToPortNo(omciInd.GetIntfId(), voltha.Port_PON_OLT)
+
+		onuDevice, err := dh.getChildDeviceFromCore(ctx, &ca.ChildDeviceFilter{
+			ParentId:     dh.device.Id,
+			OnuId:        omciInd.OnuId,
+			ParentPortNo: ponPort,
+		})
+		if err != nil {
+			return olterrors.NewErrNotFound("onu", log.Fields{
+				"intf-id": omciInd.IntfId,
+				"onu-id":  omciInd.OnuId}, err)
+		}
+		deviceType = onuDevice.Type
+		deviceID = onuDevice.Id
+		proxyDeviceID = onuDevice.ProxyAddress.DeviceId
+		childAdapterEndpoint = onuDevice.AdapterEndpoint
+		//if not exist in cache, then add to cache.
+		dh.onus.Store(onuKey, NewOnuDevice(deviceID, deviceType, onuDevice.SerialNumber, omciInd.OnuId, omciInd.IntfId, proxyDeviceID, false, onuDevice.AdapterEndpoint))
+	} else {
+		//found in cache
+		logger.Debugw(ctx, "omci-indication-for-a-device-in-cache.", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
+		deviceType = onuInCache.(*OnuDevice).deviceType
+		deviceID = onuInCache.(*OnuDevice).deviceID
+		proxyDeviceID = onuInCache.(*OnuDevice).proxyDeviceID
+		childAdapterEndpoint = onuInCache.(*OnuDevice).adapterEndpoint
+	}
+
+	if err := dh.sendOmciIndicationToChildAdapter(ctx, childAdapterEndpoint, &ia.OmciMessage{
+		ParentDeviceId: proxyDeviceID,
+		ChildDeviceId:  deviceID,
+		Message:        omciInd.Pkt,
+	}); err != nil {
+		return olterrors.NewErrCommunication("omci-request", log.Fields{
+			"source":          dh.openOLT.config.AdapterEndpoint,
+			"device-type":     deviceType,
+			"destination":     childAdapterEndpoint,
+			"onu-id":          deviceID,
+			"proxy-device-id": proxyDeviceID}, err)
+	}
+	return nil
+}
+//
 // //ProcessInterAdapterMessage sends the proxied messages to the target device
 // // If the proxy address is not found in the unmarshalled message, it first fetches the onu device for which the message
 // // is meant, and then send the unmarshalled omci message to this onu
 // func (dh *DeviceHandler) ProcessInterAdapterMessage(ctx context.Context, msg *ca.InterAdapterMessage) error {
-// 	logger.Debugw(ctx, "process-inter-adapter-message", log.Fields{"msgID": msg.Header.Id})
-// 	if msg.Header.Type == ca.InterAdapterMessageType_OMCI_REQUEST {
-// 		return dh.handleInterAdapterOmciMsg(ctx, msg)
-// 	}
-// 	return olterrors.NewErrInvalidValue(log.Fields{"inter-adapter-message-type": msg.Header.Type}, nil)
+//   logger.Debugw(ctx, "process-inter-adapter-message", log.Fields{"msgID": msg.Header.Id})
+//   if msg.Header.Type == ca.InterAdapterMessageType_OMCI_REQUEST {
+//     return dh.handleInterAdapterOmciMsg(ctx, msg)
+//   }
+//   return olterrors.NewErrInvalidValue(log.Fields{"inter-adapter-message-type": msg.Header.Type}, nil)
 // }
 
 // ProxyOmciMessage sends the proxied OMCI message to the target device
@@ -1588,17 +1590,17 @@ func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.
 	case "up", "down":
 		logger.Debugw(ctx, "sending-interadapter-onu-indication", log.Fields{"onuIndication": onuInd, "device-id": onuDevice.Id, "operStatus": onuDevice.OperStatus, "adminStatus": onuDevice.AdminState})
 
-//		err := dh.sendOnuIndicationToChildAdapter(ctx, onuDevice.AdapterEndpoint, &ia.OnuIndicationMessage{
-//			DeviceId:      onuDevice.Id,
-//			OnuIndication: onuInd,
-//		})
-//		if err != nil {
-//			return olterrors.NewErrCommunication("inter-adapter-send-failed", log.Fields{
-//				"onu-indicator": onuInd,
-//				"source":        dh.openOLT.config.AdapterEndpoint,
-//				"device-type":   onuDevice.Type,
-//				"device-id":     onuDevice.Id}, err)
-//		}
+		err := dh.sendOnuIndicationToChildAdapter(ctx, onuDevice.AdapterEndpoint, &ia.OnuIndicationMessage{
+			DeviceId:      onuDevice.Id,
+			OnuIndication: onuInd,
+		})
+		if err != nil {
+			return olterrors.NewErrCommunication("inter-adapter-send-failed", log.Fields{
+				"onu-indicator": onuInd,
+				"source":        dh.openOLT.config.AdapterEndpoint,
+				"device-type":   onuDevice.Type,
+				"device-id":     onuDevice.Id}, err)
+		}
 	default:
 		return olterrors.NewErrInvalidValue(log.Fields{"oper-state": onuInd.OperState}, nil)
 	}
@@ -4382,4 +4384,28 @@ func(dh *DeviceHandler) SendOmciDatav2(ctx context.Context, request *voltha.Omci
       }
 
       return nil
+}
+func(dh *DeviceHandler) getEtcdList(ctx context.Context) (*voltha.EtcdList, error){
+      //var err error
+
+      listVal,err:=dh.resourceMgr[0].KVStore.List(ctx, "")
+//      var arr  []interface{}
+//      var value *kvstore.KVPair
+//      for key,val := range listVal{
+//        _=val
+//        value, err= dh.resourceMgr[0].KVStore.Get(ctx, key)
+//        if err!=nil{
+//          arr = append(arr,value)
+//        }else{
+//          logger.Error(ctx, "invalid Path", log.Fields{"path": key})
+//        }
+//      }
+      if err!=nil{
+        logger.Error(ctx,"errorrrrrr", log.Fields{"err":err})
+      }
+      returnVal := &voltha.EtcdList{
+        Ver1: fmt.Sprint(listVal),
+        Ver2: "",
+      }
+      return returnVal, nil
 }
