@@ -60,6 +60,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 //  "github.com/opencord/voltha-lib-go/v7/pkg/db/kvstore"
+  omcilib "github.com/opencord/bbsim/common/omci"
 
 )
 
@@ -1314,7 +1315,12 @@ func (dh *DeviceHandler) sendProxiedMessage(ctx context.Context, onuDevice *volt
 	transid := extractOmciTransactionID(omciMsg.Message)
 	logger.Debugw(ctx, "sent-omci-msg", log.Fields{"intf-id": intfID, "onu-id": onuID,
 		"omciTransactionID": transid, "omciMsg": string(omciMessage.Pkt)})
-
+  omciDetail, _, omciErr := omcilib.ParseOpenOltOmciPacket(omciMessage.Pkt)
+  if omciErr!=nil{
+    logger.Errorw(ctx, "Omci Request Parsing Error", log.Fields{"omciMsg": string(omciMessage.Pkt)})
+    panic(omciErr)
+  }
+  logger.Debugw(ctx, "Omci Request Detail", log.Fields{"Omci Detail": omciDetail})
 	_, err := dh.Client.OmciMsgOut(log.WithSpanFromContext(context.Background(), ctx), omciMessage)
 	if err != nil {
 		return olterrors.NewErrCommunication("omci-send-failed", log.Fields{
@@ -3124,6 +3130,23 @@ func (dh *DeviceHandler) sendOmciIndicationToChildAdapter(ctx context.Context, c
 	logger.Debugw(ctx, "sending-omci-response", log.Fields{"response": response, "child-endpoint": childEndpoint})
 	subCtx, cancel := context.WithTimeout(log.WithSpanFromContext(context.Background(), ctx), dh.cfg.RPCTimeout)
 	defer cancel()
+
+  //var omciMessage *oop.OmciMsg
+	hexPkt := make([]byte, hex.EncodedLen(len(response.Message)))
+	hex.Encode(hexPkt, response.Message)
+//	omciMessage = &oop.OmciMsg{IntfId: intfID, OnuId: onuID, Pkt: hexPkt}
+
+  omciDetail, _, err := omcilib.ParseOpenOltOmciPacket(hexPkt)
+  if err!=nil{
+    logger.Errorw(ctx, "Omci Response Parsing Error", log.Fields{"omci Pkt": hexPkt})
+    panic(err)
+  }
+	transid := extractOmciTransactionID(response.Message)
+  logger.Debugw(ctx, "Omci Response Detail", log.Fields{"Omci Detail": omciDetail, "transId": transid})
+	// TODO: Below logging illustrates the "stringify" of the omci Pkt.
+	//  once above is fixed this log line can change to just use hex.EncodeToString(omciMessage.Pkt)
+
+
 	_, err = aClient.OmciIndication(subCtx, response)
 	return err
 }
