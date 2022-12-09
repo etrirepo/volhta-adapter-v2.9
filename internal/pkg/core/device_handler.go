@@ -323,7 +323,7 @@ func GetportLabel(portNum uint32, portType voltha.Port_PortType) (string, error)
 
 func (dh *DeviceHandler) addPort(ctx context.Context, intfID uint32, portType voltha.Port_PortType, state string) error {
 
-  logger.Debugw(ctx, "Enter  addPortFunction - Delta Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
+  logger.Debugw(ctx, "Enter  addPortFunction - ETRI Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
 	var operStatus common.OperStatus_Types
 	if state == "up" {
 		operStatus = voltha.OperStatus_ACTIVE
@@ -390,7 +390,7 @@ func (dh *DeviceHandler) addPort(ctx context.Context, intfID uint32, portType vo
 	}
 	go dh.updateLocalDevice(ctx)
 
-  logger.Debugw(ctx, "Exit addPortFunction - Delta Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
+  logger.Debugw(ctx, "Exit addPortFunction - ETRI Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
 	return nil
 }
 
@@ -534,7 +534,7 @@ func isIndicationAllowedDuringOltAdminDown(indication *oop.Indication) bool {
 
 func (dh *DeviceHandler) handleOltIndication(ctx context.Context, oltIndication *oop.OltIndication) error {
 
-  logger.Debugw(ctx, "Enter handle OltIndication - Delta Debug Point", log.Fields{"Indication":oltIndication})
+  logger.Debugw(ctx, "Enter handle OltIndication - ETRI Debug Point", log.Fields{"Indication":oltIndication})
 	raisedTs := time.Now().Unix()
 	if oltIndication.OperState == "up" && dh.transitionMap.currentDeviceState != deviceStateUp {
 		dh.transitionMap.Handle(ctx, DeviceUpInd)
@@ -548,13 +548,13 @@ func (dh *DeviceHandler) handleOltIndication(ctx context.Context, oltIndication 
 			"indication": oltIndication,
 			"timestamp":  raisedTs}, err)
 	}
-  logger.Debugw(ctx, "Exit handle OltIndication - Delta Debug Point", log.Fields{"Indication":oltIndication})
+  logger.Debugw(ctx, "Exit handle OltIndication - ETRI Debug Point", log.Fields{"Indication":oltIndication})
 	return nil
 }
 
 // nolint: gocyclo
 func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.Indication) {
-  logger.Debugw(ctx, "Check Recevice Indication - Delta Debug Point", log.Fields{"Indication":indication})
+  logger.Debugw(ctx, "Check Recevice Indication - ETRI Debug Point", log.Fields{"Indication":indication})
 	raisedTs := time.Now().Unix()
 	switch indication.Data.(type) {
 	case *oop.Indication_OltInd:
@@ -570,11 +570,11 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 
 		intfInd := indication.GetIntfInd()
 		go func() {
-      logger.Debugw(ctx, "Enter handle IntfIndication - Delta Debug Point", log.Fields{"Indication":indication})
+      logger.Debugw(ctx, "Enter handle IntfIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 			if err := dh.addPort(ctx, intfInd.GetIntfId(), voltha.Port_PON_OLT, intfInd.GetOperState()); err != nil {
-				_ = olterrors.NewErrAdapter("handle-indication-error-IntfIndication-addPort Delta Debug Point", log.Fields{"type": "interface", "device-id": dh.device.Id}, err).Log()
+				_ = olterrors.NewErrAdapter("handle-indication-error-IntfIndication-addPort ETRI Debug Point", log.Fields{"type": "interface", "device-id": dh.device.Id}, err).Log()
 			}
-      logger.Debugw(ctx, "Exit handle IntfIndication - Delta Debug Point", log.Fields{"Indication":indication})
+      logger.Debugw(ctx, "Exit handle IntfIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 		}()
 		logger.Infow(ctx, "received-interface-indication", log.Fields{"InterfaceInd": intfInd, "device-id": dh.device.Id})
 	case *oop.Indication_IntfOperInd:
@@ -584,22 +584,22 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		intfOperInd := indication.GetIntfOperInd()
 		if intfOperInd.GetType() == "nni" {
 			go func() {
-        logger.Debugw(ctx, "Enter handle IntfOperIndication - Delta Debug Point", log.Fields{"Indication":indication})
+        logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 				if err := dh.addPort(ctx, intfOperInd.GetIntfId(), voltha.Port_ETHERNET_NNI, intfOperInd.GetOperState()); err != nil {
-					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort Delta Debug Point", log.Fields{"type": "interface-oper-nni", "device-id": dh.device.Id}, err).Log()
+					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort ETRI Debug Point", log.Fields{"type": "interface-oper-nni", "device-id": dh.device.Id}, err).Log()
 				}
-        logger.Debugw(ctx, "Exit handle IntfOperIndication - Delta Debug Point", log.Fields{"Indication":indication})
+        logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 			}()
 		} else if intfOperInd.GetType() == "pon" {
 			// TODO: Check what needs to be handled here for When PON PORT down, ONU will be down
 			// Handle pon port update
 			go func() {
-        logger.Debugw(ctx, "Enter handle IntfOperIndication - Delta Debug Point", log.Fields{"Indication":indication})
+        logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 				if err := dh.addPort(ctx, intfOperInd.GetIntfId(), voltha.Port_PON_OLT, intfOperInd.GetOperState()); err != nil {
-					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort Delta Debug Point", log.Fields{"type": "interface-oper-pon", "device-id": dh.device.Id}, err).Log()
+					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort ETRI Debug Point", log.Fields{"type": "interface-oper-pon", "device-id": dh.device.Id}, err).Log()
 				}
-        logger.Debugw(ctx, "Exit handle IntfOperIndication - Delta Debug Point", log.Fields{"Indication":indication})
+        logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 			}()
 			go dh.eventMgr.oltIntfOperIndication(ctx, indication.GetIntfOperInd(), dh.device.Id, raisedTs)
 		}
@@ -610,7 +610,7 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		span, ctx := log.CreateChildSpan(ctx, "onu-discovery-indication", log.Fields{"device-id": dh.device.Id})
 		defer span.Finish()
 		onuDiscInd := indication.GetOnuDiscInd()
-		logger.Infow(ctx, "received-onu-discovery-indication - Delta Debug Point", log.Fields{"OnuDiscInd": onuDiscInd, "device-id": dh.device.Id})
+		logger.Infow(ctx, "received-onu-discovery-indication - ETRI Debug Point", log.Fields{"OnuDiscInd": onuDiscInd, "device-id": dh.device.Id})
 		//put message  to channel and return immediately
 		dh.putOnuIndicationToChannel(ctx, indication, onuDiscInd.GetIntfId())
 	case *oop.Indication_OnuInd:
@@ -618,7 +618,7 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		defer span.Finish()
 
 		onuInd := indication.GetOnuInd()
-		logger.Infow(ctx, "received-onu-indication - Delta Debug Point", log.Fields{"OnuInd": onuInd, "device-id": dh.device.Id})
+		logger.Infow(ctx, "received-onu-indication - ETRI Debug Point", log.Fields{"OnuInd": onuInd, "device-id": dh.device.Id})
 		//put message  to channel and return immediately
 		dh.putOnuIndicationToChannel(ctx, indication, onuInd.GetIntfId())
 	case *oop.Indication_OmciInd:
@@ -628,10 +628,10 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		omciInd := indication.GetOmciInd()
 		logger.Debugw(ctx, "received-omci-indication", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
 		go func() {
-      logger.Debugw(ctx, "Enter handle OmciIndication - Delta Debug Point", log.Fields{"Indication":indication})
+      logger.Debugw(ctx, "Enter handle OmciIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 			if err := dh.omciIndication(ctx, omciInd); err != nil {
 				_ = olterrors.NewErrAdapter("handle-indication-error", log.Fields{"type": "omci", "device-id": dh.device.Id}, err).Log()
-        logger.Debugw(ctx, "Exit handle OmciIndication - Delta Debug Point", log.Fields{"Indication":indication})
+        logger.Debugw(ctx, "Exit handle OmciIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 			}
 		}()
@@ -660,11 +660,11 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		}
 
 		go func() {
-      logger.Debugw(ctx, "Enter handle PacketIndication - Delta Debug Point", log.Fields{"Indication":indication})
+      logger.Debugw(ctx, "Enter handle PacketIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 			if err := dh.handlePacketIndication(ctx, pktInd); err != nil {
 				_ = olterrors.NewErrAdapter("handle-indication-error", log.Fields{"type": "packet", "device-id": dh.device.Id}, err).Log()
-      logger.Debugw(ctx, "Exit handle PacketIndication - Delta Debug Point", log.Fields{"Indication":indication})
+      logger.Debugw(ctx, "Exit handle PacketIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 			}
 		}()
@@ -673,10 +673,10 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		defer span.Finish()
 
 		portStats := indication.GetPortStats()
-    logger.Debugw(ctx, "Enter handle PortStatsIndication - Delta Debug Point", log.Fields{"Indication":indication})
+    logger.Debugw(ctx, "Enter handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 		go dh.portStats.PortStatisticsIndication(ctx, portStats, dh.totalPonPorts)
-    logger.Debugw(ctx, "Exit handle PortStatsIndication - Delta Debug Point", log.Fields{"Indication":indication})
+    logger.Debugw(ctx, "Exit handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 	case *oop.Indication_FlowStats:
 		span, ctx := log.CreateChildSpan(ctx, "flow-stats-indication", log.Fields{"device-id": dh.device.Id})
@@ -690,9 +690,9 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 
 		alarmInd := indication.GetAlarmInd()
 		logger.Infow(ctx, "received-alarm-indication", log.Fields{"AlarmInd": alarmInd, "device-id": dh.device.Id})
-    logger.Debugw(ctx, "Enter handle AlarmIndication - Delta Debug Point", log.Fields{"Indication":indication})
+    logger.Debugw(ctx, "Enter handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 		go dh.eventMgr.ProcessEvents(ctx, alarmInd, dh.device.Id, raisedTs)
-    logger.Debugw(ctx, "Exit handle AlarmIndication - Delta Debug Point", log.Fields{"Indication":indication})
+    logger.Debugw(ctx, "Exit handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication":indication})
 
 	}
 }
@@ -931,7 +931,7 @@ func (dh *DeviceHandler) doStateConnected(ctx context.Context) error {
 		dh.UpdatePmConfig(ctx, device.PmConfigs)
 	}
 
-	go startHeartbeatCheck(ctx, dh)
+	//go startHeartbeatCheck(ctx, dh)
 
 	return nil
 }
@@ -1353,7 +1353,7 @@ func (dh *DeviceHandler) activateONU(ctx context.Context, intfID uint32, onuID i
 }
 
 func (dh *DeviceHandler) onuDiscIndication(ctx context.Context, onuDiscInd *oop.OnuDiscIndication) error {
-  logger.Debugw(ctx, "Enter onuDiscIndication Function - Delta Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
+  logger.Debugw(ctx, "Enter onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
 	channelID := onuDiscInd.GetIntfId()
 	parentPortNo := plt.IntfIDToPortNo(onuDiscInd.GetIntfId(), voltha.Port_PON_OLT)
 
@@ -1501,12 +1501,12 @@ func (dh *DeviceHandler) onuDiscIndication(ctx context.Context, onuDiscInd *oop.
 			"device-id":     onuDevice.Id,
 			"serial-number": sn}, err)
 	}
-  logger.Debugw(ctx, "Exit onuDiscIndication Function - Delta Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
+  logger.Debugw(ctx, "Exit onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
 	return nil
 }
 
 func (dh *DeviceHandler) onuIndication(ctx context.Context, onuInd *oop.OnuIndication) error {
-  logger.Debugw(ctx, "Enter onuIndication Function - Delta Debug Point", log.Fields{"onuInd":onuInd})
+  logger.Debugw(ctx, "Enter onuIndication Function - ETRI Debug Point", log.Fields{"onuInd":onuInd})
 
 	ponPort := plt.IntfIDToPortNo(onuInd.GetIntfId(), voltha.Port_PON_OLT)
 	var onuDevice *voltha.Device
@@ -1573,12 +1573,12 @@ func (dh *DeviceHandler) onuIndication(ctx context.Context, onuInd *oop.OnuIndic
 	if err := dh.updateOnuStates(ctx, onuDevice, onuInd); err != nil {
 		return olterrors.NewErrCommunication("state-update-failed", errFields, err)
 	}
-  logger.Debugw(ctx, "Exit onuIndication Function - Delta Debug Point", log.Fields{"onuInd":onuInd})
+  logger.Debugw(ctx, "Exit onuIndication Function - ETRI Debug Point", log.Fields{"onuInd":onuInd})
 	return nil
 }
 
 func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.Device, onuInd *oop.OnuIndication) error {
-  logger.Debugw(ctx, "Enter updateOnuState Function - Delta Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
+  logger.Debugw(ctx, "Enter updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
   logger.Debugw(ctx, "onu-indication-for-state", log.Fields{"onuIndication": onuInd, "device-id": onuDevice.Id, "operStatus": onuDevice.OperStatus, "adminStatus": onuDevice.AdminState})
 	if onuInd.AdminState == "down" || onuInd.OperState == "down" {
 		// The ONU has gone admin_state "down" or oper_state "down" - we expect the ONU to send discovery again
@@ -1610,7 +1610,7 @@ func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.
 	default:
 		return olterrors.NewErrInvalidValue(log.Fields{"oper-state": onuInd.OperState}, nil)
 	}
-  logger.Debugw(ctx, "Exit updateOnuState Function - Delta Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
+  logger.Debugw(ctx, "Exit updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
 	return nil
 }
 
@@ -2254,7 +2254,7 @@ func startHeartbeatCheck(ctx context.Context, dh *DeviceHandler) {
 		case <-heartbeatTimer.C:
 			ctxWithTimeout, cancel := context.WithTimeout(log.WithSpanFromContext(context.Background(), ctx), dh.openOLT.GrpcTimeoutInterval)
 			if heartBeat, err := dh.Client.HeartbeatCheck(ctxWithTimeout, new(oop.Empty)); err != nil {
-				logger.Warnw(ctx, "heartbeat-failed", log.Fields{"device-id": dh.device.Id})
+				logger.Warnw(ctx, "ETRI DEBUG heartbeat-failed", log.Fields{"device-id": dh.device.Id})
 				if timerCheck == nil {
 					// start a after func, when expired will update the state to the core
 					timerCheck = time.AfterFunc(dh.openOLT.HeartbeatFailReportInterval, func() { dh.updateStateUnreachable(ctx) })
@@ -2262,7 +2262,7 @@ func startHeartbeatCheck(ctx context.Context, dh *DeviceHandler) {
 			} else {
 				if timerCheck != nil {
 					if timerCheck.Stop() {
-						logger.Debugw(ctx, "got-heartbeat-within-timeout", log.Fields{"device-id": dh.device.Id})
+						logger.Debugw(ctx, "ETRIU DEBUG got-heartbeat-within-timeout", log.Fields{"device-id": dh.device.Id})
 					}
 					timerCheck = nil
 				}
@@ -2270,9 +2270,9 @@ func startHeartbeatCheck(ctx context.Context, dh *DeviceHandler) {
 					log.Fields{"signature": heartBeat,
 						"device-id": dh.device.Id})
 			}
-			cancel()
+      cancel()
 		case <-dh.stopHeartbeatCheck:
-			logger.Debugw(ctx, "stopping-heartbeat-check", log.Fields{"device-id": dh.device.Id})
+			logger.Debugw(ctx, "ETRI DEBUG stopping-heartbeat-check", log.Fields{"device-id": dh.device.Id})
 			return
 		}
 	}
@@ -2628,7 +2628,7 @@ func (dh *DeviceHandler) getPonIfFromFlow(flow *of.OfpFlowStats) uint32 {
 }
 
 func (dh *DeviceHandler) getOnuIndicationChannel(ctx context.Context, intfID uint32) chan onuIndicationMsg {
-  logger.Debugw(ctx, "Enter getOnuIndicationChannel Function - Delta Debug Point", log.Fields{"intfID":intfID})
+  logger.Debugw(ctx, "Enter getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID":intfID})
 
 
 	dh.perPonOnuIndicationChannelLock.Lock()
@@ -2647,7 +2647,7 @@ func (dh *DeviceHandler) getOnuIndicationChannel(ctx context.Context, intfID uin
 	dh.perPonOnuIndicationChannelLock.Unlock()
 	go dh.onuIndicationsRoutine(&channels)
 
-  logger.Debugw(ctx, "Exit getOnuIndicationChannel Function - Delta Debug Point", log.Fields{"intfID":intfID})
+  logger.Debugw(ctx, "Exit getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID":intfID})
 	return channels.indicationChannel
 
 }
@@ -2668,10 +2668,10 @@ func (dh *DeviceHandler) putOnuIndicationToChannel(ctx context.Context, indicati
 		indication: indication,
 	}
 	logger.Debugw(ctx, "put-onu-indication-to-channel", log.Fields{"indication": indication, "intfID": intfID})
-  logger.Debugw(ctx, "Enter putOnuIndicationToChannel Function - Delta Debug Point", log.Fields{"Indication":indication})
+  logger.Debugw(ctx, "Enter putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication":indication})
 	// Send the onuIndication on the ONU channel
 	dh.getOnuIndicationChannel(ctx, intfID) <- ind
-  logger.Debugw(ctx, "Exit putOnuIndicationToChannel Function - Delta Debug Point", log.Fields{"Indication":indication})
+  logger.Debugw(ctx, "Exit putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication":indication})
 }
 
 func (dh *DeviceHandler) onuIndicationsRoutine(onuChannels *onuIndicationChannels) {
@@ -2681,7 +2681,7 @@ func (dh *DeviceHandler) onuIndicationsRoutine(onuChannels *onuIndicationChannel
 		// process one indication per onu, before proceeding to the next one
 		case onuInd := <-onuChannels.indicationChannel:
 			indication := *(proto.Clone(onuInd.indication)).(*oop.Indication)
-			logger.Debugw(onuInd.ctx, "calling-indication Delta Debug Point", log.Fields{"device-id": dh.device.Id,
+			logger.Debugw(onuInd.ctx, "calling-indication ETRI Debug Point", log.Fields{"device-id": dh.device.Id,
 				"ind": indication})
 			switch indication.Data.(type) {
 			case *oop.Indication_OnuInd:
@@ -3127,7 +3127,7 @@ func (dh *DeviceHandler) sendOmciIndicationToChildAdapter(ctx context.Context, c
 	if err != nil || aClient == nil {
 		return err
 	}
-	logger.Debugw(ctx, "sending-omci-response", log.Fields{"response": response, "child-endpoint": childEndpoint})
+	logger.Debugw(ctx, "sending-omci-response - ETRI Debug Point", log.Fields{"response": response, "child-endpoint": childEndpoint})
 	subCtx, cancel := context.WithTimeout(log.WithSpanFromContext(context.Background(), ctx), dh.cfg.RPCTimeout)
 	defer cancel()
 
@@ -4432,3 +4432,17 @@ func(dh *DeviceHandler) getEtcdList(ctx context.Context) (*voltha.EtcdList, erro
       }
       return returnVal, nil
 }
+func(dh *DeviceHandler) GetPktInd(ctx context.Context, request *boo.BossRequest) (*boo.BossPktIndResponse, error){
+      var err error
+      if dh.bossClient !=nil{
+          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
+      }else{
+          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
+      }
+      response, err := dh.bossClient.GetPktInd(ctx, request)
+      if err!=nil{
+          return nil, err
+      }
+      return response, nil
+}
+

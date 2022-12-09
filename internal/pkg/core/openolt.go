@@ -1641,3 +1641,18 @@ func (oo *OpenOLT) GetEtcdList(ctx context.Context, id *voltha.ID)(*voltha.EtcdL
   }
 
 }
+func (oo *OpenOLT) GetPktInd(ctx context.Context, request *bossopenolt.BossRequest) (*bossopenolt.BossPktIndResponse, error) {
+    var err error
+    resp := new(bossopenolt.BossPktIndResponse)
+    deviceID := request.DeviceId
+    logger.Infow(ctx, "GetPktInd", log.Fields{"device-id": request.DeviceId, "request": request})
+    if handler := oo.getDeviceHandler(deviceID); handler != nil {
+        if resp, err = handler.GetPktInd(ctx, request); err != nil {
+            logger.Infow(ctx, "GetPktInd_Error", log.Fields{"device-id": request.DeviceId, "request": request})
+
+            return nil, err
+        }
+    }
+    return resp, nil
+}
+

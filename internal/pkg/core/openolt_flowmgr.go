@@ -522,6 +522,15 @@ func (f *OpenOltFlowMgr) pushSchedulerQueuesToDevice(ctx context.Context, sq sch
 			IntfId: sq.intfID, OnuId: sq.onuID,
 			UniId: sq.uniID, PortNo: sq.uniPort,
 			TrafficScheds: TrafficSched}); err != nil {
+       logger.Errorw(ctx, "ETRI DEBUG ERROR sending-traffic-scheduler-create-to-device",
+			log.Fields{
+				"direction":     sq.direction,
+				"TrafficScheds": TrafficSched,
+				"device-id":     f.deviceHandler.device.Id,
+				"intfID":        sq.intfID,
+				"onuID":         sq.onuID,
+				"uniID":         sq.uniID})
+
 			return olterrors.NewErrAdapter("failed-to-create-traffic-schedulers-in-device", log.Fields{"TrafficScheds": TrafficSched}, err)
 		}
 		logger.Infow(ctx, "successfully-created-traffic-schedulers", log.Fields{
@@ -541,6 +550,11 @@ func (f *OpenOltFlowMgr) pushSchedulerQueuesToDevice(ctx context.Context, sq sch
 		TrafficQueues: trafficQueues,
 		TechProfileId: TrafficSched[0].TechProfileId}
 	if _, err := f.deviceHandler.Client.CreateTrafficQueues(ctx, queues); err != nil {
+    logger.Errorw(ctx, "ETRI DEBUG ERRORsending-traffic-queues-create-to-device",
+		log.Fields{"direction": sq.direction,
+			"traffic-queues": trafficQueues,
+			"device-id":      f.deviceHandler.device.Id})
+
 		if len(queues.TrafficQueues) > 1 {
 			logger.Debug(ctx, "removing-queues-for-1tcont-multi-gem", log.Fields{"intfID": sq.intfID, "onuID": sq.onuID, "dir": sq.direction})
 			_, _ = f.deviceHandler.Client.RemoveTrafficQueues(ctx, queues)
@@ -620,6 +634,7 @@ func (f *OpenOltFlowMgr) RemoveSchedulerQueues(ctx context.Context, sq schedQueu
 			UniId: sq.uniID, PortNo: sq.uniPort,
 			TrafficQueues: TrafficQueues,
 			TechProfileId: TrafficSched[0].TechProfileId}); err != nil {
+        logger.Errorw(ctx, "ETRI DEBUG ERROR remove Traffic Queue", log.Fields{"err":err})
 		return olterrors.NewErrAdapter("unable-to-remove-traffic-queues-from-device",
 			log.Fields{
 				"intf-id":        sq.intfID,
@@ -633,6 +648,7 @@ func (f *OpenOltFlowMgr) RemoveSchedulerQueues(ctx context.Context, sq schedQueu
 			IntfId: sq.intfID, OnuId: sq.onuID,
 			UniId: sq.uniID, PortNo: sq.uniPort,
 			TrafficScheds: TrafficSched}); err != nil {
+        logger.Errorw(ctx, "ETRI DEBUG ERROR remove Traffic Scheduler", log.Fields{"err":err})
 			return olterrors.NewErrAdapter("unable-to-remove-traffic-schedulers-from-device",
 				log.Fields{
 					"intf-id":            sq.intfID,
@@ -734,6 +750,7 @@ func (f *OpenOltFlowMgr) forceRemoveSchedulerQueues(ctx context.Context, sq sche
 				UniId: sq.uniID, PortNo: sq.uniPort,
 				TrafficQueues: TrafficQueues,
 				TechProfileId: TrafficSched[0].TechProfileId}); err != nil {
+        logger.Errorw(ctx, "ETRI DEBUG ERROR remove Traffic Queue", log.Fields{"err":err})
 			logger.Warnw(ctx, "error removing traffic queue", log.Fields{
 				"direction": sq.direction,
 				"intf-id":   sq.intfID,
@@ -760,6 +777,7 @@ func (f *OpenOltFlowMgr) forceRemoveSchedulerQueues(ctx context.Context, sq sche
 		IntfId: sq.intfID, OnuId: sq.onuID,
 		UniId: sq.uniID, PortNo: sq.uniPort,
 		TrafficScheds: TrafficSched}); err != nil {
+        logger.Errorw(ctx, "ETRI DEBUG ERROR remove Traffic Scheduler", log.Fields{"err":err})
 		logger.Warnw(ctx, "error removing traffic scheduler", log.Fields{
 			"direction": sq.direction,
 			"intf-id":   sq.intfID,
@@ -1564,6 +1582,9 @@ func (f *OpenOltFlowMgr) addFlowToDevice(ctx context.Context, logicalFlow *ofp.O
 		"device-id": f.deviceHandler.device.Id,
 		"intf-id":   intfID})
 	_, err := f.deviceHandler.Client.FlowAdd(log.WithSpanFromContext(context.Background(), ctx), deviceFlow)
+  if err!=nil {
+        logger.Errorw(ctx, "ETRI DEBUG ERROR FlowAdd", log.Fields{"err":err})
+  }
 
 	st, _ := status.FromError(err)
 	if st.Code() == codes.AlreadyExists {
@@ -1607,6 +1628,7 @@ func (f *OpenOltFlowMgr) removeFlowFromDevice(ctx context.Context, deviceFlow *o
 			"device-id": f.deviceHandler.device.Id})
 	_, err := f.deviceHandler.Client.FlowRemove(log.WithSpanFromContext(context.Background(), ctx), deviceFlow)
 	if err != nil {
+    logger.Errorw(ctx, "ETRI DEBUG ERROR FlowRemove", log.Fields{"err":err})
 		if f.deviceHandler.device.ConnectStatus == common.ConnectStatus_UNREACHABLE {
 			logger.Warnw(ctx, "can-not-remove-flow-from-device--unreachable",
 				log.Fields{
@@ -3508,10 +3530,13 @@ func (f *OpenOltFlowMgr) revertTechProfileInstance(ctx context.Context, sq sched
 func (f *OpenOltFlowMgr) revertScheduler(ctx context.Context, sq schedQueue, TrafficSched []*tp_pb.TrafficScheduler) {
 	// revert scheduler
 	logger.Warnw(ctx, "reverting-scheduler-for-onu", log.Fields{"intf-id": sq.intfID, "onu-id": sq.onuID, "uni-id": sq.uniID, "tp-id": sq.tpID})
-	_, _ = f.deviceHandler.Client.RemoveTrafficSchedulers(ctx, &tp_pb.TrafficSchedulers{
+  _, err := f.deviceHandler.Client.RemoveTrafficSchedulers(ctx, &tp_pb.TrafficSchedulers{
 		IntfId: sq.intfID, OnuId: sq.onuID,
 		UniId: sq.uniID, PortNo: sq.uniPort,
 		TrafficScheds: TrafficSched})
+  if err!=nil {
+            logger.Errorw(ctx, "ETRI DEBUG ERROR remove Traffic Scheduler", log.Fields{"err":err})
+  }
 }
 
 // validateMeter validates if there is a meter mismatch for the given direction. It also clears the stale meter if the reference count is zero
