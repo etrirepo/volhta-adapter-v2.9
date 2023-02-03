@@ -24,6 +24,9 @@ import (
 	"sync"
 	"time"
 
+  "io/ioutil"
+	"encoding/json"
+  "os"
 	plt "github.com/opencord/voltha-lib-go/v7/pkg/platform"
 	rsrcMgr "github.com/opencord/voltha-openolt-adapter/internal/pkg/resourcemanager"
 
@@ -33,6 +36,18 @@ import (
 	"github.com/opencord/voltha-protos/v5/go/openolt"
 	"github.com/opencord/voltha-protos/v5/go/voltha"
 )
+ var RX_BYTES = "rx-bytes"
+ var RX_PACKETS = "rx-packets"
+ var RX_UCAST_PACKETS = "rx-ucast-packets"
+ var RX_MCAST_PACKETS = "rx-mcast-packets"
+ var RX_BCAST_PACKETS = "rx-bcast-packets"
+ var TX_BYTES = "tx-bytes"
+ var TX_PACKETS = "tx-packets"
+ var TX_UCAST_PACKETS = "tx-ucast-packets"
+ var TX_MCAST_PACKETS = "tx-mcast-packets"
+ var TX_BCAST_PACKETS = "tx-bcast-packets"
+ var RX_CRC_ERRORS = "rx-crc-errors"
+ var BIP_ERRORS = "bip-errors"
 
 const (
 	//NNIStats statType constant
@@ -98,7 +113,19 @@ var mutex = &sync.Mutex{}
 
 var onuStats = make(chan *openolt.OnuStatistics, 100)
 var gemStats = make(chan *openolt.GemPortStatistics, 100)
+type DevicePm struct{
+  Values []PortPm `json:"values"`
+}
 
+type PortPm struct {
+   DeviceId   string `json:"deviceId"`
+   PortNo     uint32 `json:"portNo"`
+   PortType   string `json:"portType"`
+   PacketType string `json:"packetType"`
+   Count      uint64 `json:"count"`
+   State      string `json:"state"`
+
+}
 //statRegInfo is used to register for notifications
 //on receiving port stats and flow stats indication
 type statRegInfo struct {
@@ -635,89 +662,372 @@ func FlowStatisticsIndication(ctx context.Context, self, FlowStats *openolt.Flow
 // PortsStatisticsKpis map the port stats values into a dictionary, creates the kpiEvent and then publish to Kafka
 func (StatMgr *OpenOltStatisticsMgr) PortsStatisticsKpis(ctx context.Context, PortStats *openolt.PortStatistics, NumPonPorts uint32) {
 
-	/*map the port stats values into a dictionary
-	  Create a kpoEvent and publish to Kafka
+  /*map the port stats values into a dictionary
+  Create a kpoEvent and publish to Kafka
 
-	  :param port_stats:
-	  :return:
-	*/
-	//var err error
-	IntfID := PortStats.IntfId
+  :param port_stats:
+  :return:
+  */
+  //var err error
+  IntfID := PortStats.IntfId
 
-	if (plt.IntfIDToPortNo(1, voltha.Port_ETHERNET_NNI) < IntfID) &&
-		(IntfID < plt.IntfIDToPortNo(4, voltha.Port_ETHERNET_NNI)) {
-		/*
-		   for this release we are only interested in the first NNI for
-		   Northbound.
-		   we are not using the other 3
-		*/
-		return
-	} else if plt.IntfIDToPortNo(0, voltha.Port_ETHERNET_NNI) == IntfID {
+  if (plt.IntfIDToPortNo(1, voltha.Port_ETHERNET_NNI) < IntfID) &&
+  (IntfID < plt.IntfIDToPortNo(4, voltha.Port_ETHERNET_NNI)) {
+    /*
+    for this release we are only interested in the first NNI for
+    Northbound.
+    we are not using the other 3
+    */
+    return
+  } else if plt.IntfIDToPortNo(0, voltha.Port_ETHERNET_NNI) == IntfID {
 
-		var portNNIStat NniPort
-		portNNIStat.IntfID = IntfID
-		portNNIStat.PortNum = uint32(0)
-		portNNIStat.RxBytes = PortStats.RxBytes
-		portNNIStat.RxPackets = PortStats.RxPackets
-		portNNIStat.RxUcastPackets = PortStats.RxUcastPackets
-		portNNIStat.RxMcastPackets = PortStats.RxMcastPackets
-		portNNIStat.RxBcastPackets = PortStats.RxBcastPackets
-		portNNIStat.TxBytes = PortStats.TxBytes
-		portNNIStat.TxPackets = PortStats.TxPackets
-		portNNIStat.TxUcastPackets = PortStats.TxUcastPackets
-		portNNIStat.TxMcastPackets = PortStats.TxMcastPackets
-		portNNIStat.TxBcastPackets = PortStats.TxBcastPackets
-		mutex.Lock()
-		StatMgr.NorthBoundPort[0] = &portNNIStat
-		mutex.Unlock()
-		logger.Debugw(ctx, "received-nni-stats", log.Fields{"nni-stats": StatMgr.NorthBoundPort})
-	}
-	for i := uint32(0); i < NumPonPorts; i++ {
+    var portNNIStat NniPort
+    portNNIStat.IntfID = IntfID
+    portNNIStat.PortNum = uint32(0)
+    portNNIStat.RxBytes = PortStats.RxBytes
+    portNNIStat.RxPackets = PortStats.RxPackets
+    portNNIStat.RxUcastPackets = PortStats.RxUcastPackets
+    portNNIStat.RxMcastPackets = PortStats.RxMcastPackets
+    portNNIStat.RxBcastPackets = PortStats.RxBcastPackets
+    portNNIStat.TxBytes = PortStats.TxBytes
+    portNNIStat.TxPackets = PortStats.TxPackets
+    portNNIStat.TxUcastPackets = PortStats.TxUcastPackets
+    portNNIStat.TxMcastPackets = PortStats.TxMcastPackets
+    portNNIStat.TxBcastPackets = PortStats.TxBcastPackets
+    mutex.Lock()
+    StatMgr.NorthBoundPort[0] = &portNNIStat
+    mutex.Unlock()
+    logger.Debugw(ctx, "received-nni-stats", log.Fields{"nni-stats": StatMgr.NorthBoundPort})
+  }
+  for i := uint32(0); i < NumPonPorts; i++ {
 
-		if plt.IntfIDToPortNo(i, voltha.Port_PON_OLT) == IntfID {
-			var portPonStat PonPort
-			portPonStat.IntfID = IntfID
-			portPonStat.PortNum = i
-			portPonStat.PONID = i
-			portPonStat.RxBytes = PortStats.RxBytes
-			portPonStat.RxPackets = PortStats.RxPackets
-			portPonStat.RxUcastPackets = PortStats.RxUcastPackets
-			portPonStat.RxMcastPackets = PortStats.RxMcastPackets
-			portPonStat.RxBcastPackets = PortStats.RxBcastPackets
-			portPonStat.TxBytes = PortStats.TxBytes
-			portPonStat.TxPackets = PortStats.TxPackets
-			portPonStat.TxUcastPackets = PortStats.TxUcastPackets
-			portPonStat.TxMcastPackets = PortStats.TxMcastPackets
-			portPonStat.TxBcastPackets = PortStats.TxBcastPackets
-			mutex.Lock()
-			StatMgr.SouthBoundPort[i] = &portPonStat
-			mutex.Unlock()
-			logger.Debugw(ctx, "received-pon-stats-for-port", log.Fields{"port-pon-stats": portPonStat})
-		}
-	}
+    if plt.IntfIDToPortNo(i, voltha.Port_PON_OLT) == IntfID {
+      var portPonStat PonPort
+      portPonStat.IntfID = IntfID
+      portPonStat.PortNum = i
+      portPonStat.PONID = i
+      portPonStat.RxBytes = PortStats.RxBytes
+      portPonStat.RxPackets = PortStats.RxPackets
+      portPonStat.RxUcastPackets = PortStats.RxUcastPackets
+      portPonStat.RxMcastPackets = PortStats.RxMcastPackets
+      portPonStat.RxBcastPackets = PortStats.RxBcastPackets
+      portPonStat.TxBytes = PortStats.TxBytes
+      portPonStat.TxPackets = PortStats.TxPackets
+      portPonStat.TxUcastPackets = PortStats.TxUcastPackets
+      portPonStat.TxMcastPackets = PortStats.TxMcastPackets
+      portPonStat.TxBcastPackets = PortStats.TxBcastPackets
+      mutex.Lock()
+      StatMgr.SouthBoundPort[i] = &portPonStat
+      mutex.Unlock()
+      logger.Debugw(ctx, "received-pon-stats-for-port", log.Fields{"port-pon-stats": portPonStat})
+    }
+    if i == (NumPonPorts - 1) {
+      var pm_data DevicePm
 
-	/*
-	   Based upon the intf_id map to an nni port or a pon port
-	   the intf_id is the key to the north or south bound collections
+      for j := uint32(0); j < 1; j++ {
+        packet_data := PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: TX_BYTES,
+          Count:      StatMgr.NorthBoundPort[j].TxBytes,
+          State:      "ACTIVE",
+        }
 
-	   Based upon the intf_id the port object (nni_port or pon_port) will
-	   have its data attr. updated by the current dataset collected.
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 1", log.Fields{"pm_Data": pm_data})
 
-	   For prefixing the rule is currently to use the port number and not the intf_id
-	*/
-	//FIXME : Just use first NNI for now
-	/* TODO should the data be marshaled before sending it ?
-	   if IntfID == IntfIdToPortNo(0, voltha.Port_ETHERNET_NNI) {
-	       //NNI port (just the first one)
-	       err = UpdatePortObjectKpiData(StatMgr.NorthBoundPorts[PortStats.IntfID], PMData)
-	   } else {
-	       //PON ports
-	       err = UpdatePortObjectKpiData(SouthboundPorts[PortStats.IntfID], PMData)
-	   }
-	   if (err != nil) {
-	       logger.Error(ctx, "Error publishing statistics data")
-	   }
-	*/
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: TX_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].TxBytes,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 2", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: TX_UCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].TxUcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 3", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: TX_MCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].TxMcastPackets,
+          State:      "ACTIVE",
+        }
+        logger.Debugw(ctx, "pm append 4", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: TX_BCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].TxBcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 5", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_BYTES,
+          Count:      StatMgr.NorthBoundPort[j].RxBytes,
+          State:      "ACTIVE",
+        }
+        //Count:      StatMgr.NorthBoundPort[IntfIDToPortNo(j, voltha.Port_ETHERNET_NNI)].RxBytes,
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 6", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].RxBytes,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 7", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_UCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].RxUcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 8", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_MCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].RxMcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 9", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_BCAST_PACKETS,
+          Count:      StatMgr.NorthBoundPort[j].RxBcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 10", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: RX_CRC_ERRORS,
+          Count:      StatMgr.NorthBoundPort[j].RxCrcErrors,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 11", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "nni",
+          PacketType: BIP_ERRORS,
+          Count:      StatMgr.NorthBoundPort[j].BipErrors,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 12", log.Fields{"pm_Data": pm_data})
+      }
+
+      for j := uint32(0); j < NumPonPorts; j++ {
+        packet_data := PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: TX_BYTES,
+          Count:      StatMgr.SouthBoundPort[j].TxBytes,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 13-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: TX_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].TxBytes,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 14-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: TX_UCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].TxUcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 15-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: TX_MCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].TxMcastPackets,
+          State:      "ACTIVE",
+        }
+
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: TX_BCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].TxBcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+
+        logger.Debugw(ctx, "pm append 16-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_BYTES,
+          Count:      StatMgr.SouthBoundPort[j].RxBytes,
+          State:      "ACTIVE",
+        }
+        //Count:      StatMgr.SouthBoundPort[IntfIDToPortNo(j, voltha.Port_ETHERNET_NNI)].RxBytes,
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 17-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].RxBytes,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 18-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_UCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].RxUcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 19-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_MCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].RxMcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 20-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_BCAST_PACKETS,
+          Count:      StatMgr.SouthBoundPort[j].RxBcastPackets,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 21-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: RX_CRC_ERRORS,
+          Count:      StatMgr.SouthBoundPort[j].RxCrcErrors,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 22-pon", log.Fields{"pm_Data": pm_data})
+        packet_data = PortPm{
+          DeviceId:   StatMgr.Device.device.Id,
+          PortNo:     j,
+          PortType:   "pon",
+          PacketType: BIP_ERRORS,
+          Count:      StatMgr.SouthBoundPort[j].BipErrors,
+          State:      "ACTIVE",
+        }
+
+        pm_data.Values = append(pm_data.Values, packet_data)
+        logger.Debugw(ctx, "pm append 23-pon", log.Fields{"pm_Data": pm_data})
+      }
+
+      data, _ := json.Marshal(pm_data)
+      logger.Debugw(ctx, "marshaling", log.Fields{"data": data})
+      fileName := "/data/" + StatMgr.Device.device.Id + ".json"
+      err := ioutil.WriteFile(fileName, data, os.FileMode(0644))
+      if err != nil {
+        fmt.Println(err)
+      }
+
+
+    }
+  }
+
+  /*
+  Based upon the intf_id map to an nni port or a pon port
+  the intf_id is the key to the north or south bound collections
+
+  Based upon the intf_id the port object (nni_port or pon_port) will
+  have its data attr. updated by the current dataset collected.
+
+  For prefixing the rule is currently to use the port number and not the intf_id
+  */
+  //FIXME : Just use first NNI for now
+  /* TODO should the data be marshaled before sending it ?
+  if IntfID == IntfIdToPortNo(0, voltha.Port_ETHERNET_NNI) {
+    //NNI port (just the first one)
+    err = UpdatePortObjectKpiData(StatMgr.NorthBoundPorts[PortStats.IntfID], PMData)
+  } else {
+    //PON ports
+    err = UpdatePortObjectKpiData(SouthboundPorts[PortStats.IntfID], PMData)
+  }
+  if (err != nil) {
+    logger.Error(ctx, "Error publishing statistics data")
+  }
+  */
 
 }
 
@@ -884,3 +1194,4 @@ func (StatMgr *OpenOltStatisticsMgr) updateGetOnuPonCountersResponse(ctx context
 	singleValResp.Response.Status = extension.GetValueResponse_OK
 	logger.Debugw(ctx, "updateGetOnuPonCountersResponse", log.Fields{"resp": singleValResp})
 }
+

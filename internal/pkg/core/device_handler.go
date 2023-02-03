@@ -46,6 +46,7 @@ import (
 	conf "github.com/opencord/voltha-openolt-adapter/internal/pkg/config"
 	"github.com/opencord/voltha-openolt-adapter/internal/pkg/olterrors"
 	rsrcMgr "github.com/opencord/voltha-openolt-adapter/internal/pkg/resourcemanager"
+	boo "github.com/opencord/voltha-protos/v5/go/bossopenolt"
 	"github.com/opencord/voltha-protos/v5/go/common"
 	ca "github.com/opencord/voltha-protos/v5/go/core_adapter"
 	"github.com/opencord/voltha-protos/v5/go/extension"
@@ -55,13 +56,12 @@ import (
 	of "github.com/opencord/voltha-protos/v5/go/openflow_13"
 	oop "github.com/opencord/voltha-protos/v5/go/openolt"
 	"github.com/opencord/voltha-protos/v5/go/voltha"
-	boo "github.com/opencord/voltha-protos/v5/go/bossopenolt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-//  "github.com/opencord/voltha-lib-go/v7/pkg/db/kvstore"
-  omcilib "github.com/opencord/bbsim/common/omci"
 
+	//  "github.com/opencord/voltha-lib-go/v7/pkg/db/kvstore"
+	omcilib "github.com/opencord/bbsim/common/omci"
 )
 
 // Constants for number of retries and for timeout
@@ -88,7 +88,7 @@ type DeviceHandler struct {
 	exitChannel             chan int
 	lockDevice              sync.RWMutex
 	Client                  oop.OpenoltClient
-	bossClient		boo.BossOpenoltClient
+	bossClient              boo.BossOpenoltClient
 	transitionMap           *TransitionMap
 	clientCon               *grpc.ClientConn
 	flowMgr                 []*OpenOltFlowMgr
@@ -323,7 +323,7 @@ func GetportLabel(portNum uint32, portType voltha.Port_PortType) (string, error)
 
 func (dh *DeviceHandler) addPort(ctx context.Context, intfID uint32, portType voltha.Port_PortType, state string) error {
 
-  logger.Debugw(ctx, "Enter  addPortFunction - ETRI Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
+	logger.Debugw(ctx, "Enter  addPortFunction - ETRI Debug Point", log.Fields{"intfId": intfID, "portType": portType, "state": state})
 	var operStatus common.OperStatus_Types
 	if state == "up" {
 		operStatus = voltha.OperStatus_ACTIVE
@@ -390,7 +390,7 @@ func (dh *DeviceHandler) addPort(ctx context.Context, intfID uint32, portType vo
 	}
 	go dh.updateLocalDevice(ctx)
 
-  logger.Debugw(ctx, "Exit addPortFunction - ETRI Debug Point", log.Fields{"intfId":intfID, "portType":portType, "state":state})
+	logger.Debugw(ctx, "Exit addPortFunction - ETRI Debug Point", log.Fields{"intfId": intfID, "portType": portType, "state": state})
 	return nil
 }
 
@@ -534,7 +534,7 @@ func isIndicationAllowedDuringOltAdminDown(indication *oop.Indication) bool {
 
 func (dh *DeviceHandler) handleOltIndication(ctx context.Context, oltIndication *oop.OltIndication) error {
 
-  logger.Debugw(ctx, "Enter handle OltIndication - ETRI Debug Point", log.Fields{"Indication":oltIndication})
+	logger.Debugw(ctx, "Enter handle OltIndication - ETRI Debug Point", log.Fields{"Indication": oltIndication})
 	raisedTs := time.Now().Unix()
 	if oltIndication.OperState == "up" && dh.transitionMap.currentDeviceState != deviceStateUp {
 		dh.transitionMap.Handle(ctx, DeviceUpInd)
@@ -548,13 +548,13 @@ func (dh *DeviceHandler) handleOltIndication(ctx context.Context, oltIndication 
 			"indication": oltIndication,
 			"timestamp":  raisedTs}, err)
 	}
-  logger.Debugw(ctx, "Exit handle OltIndication - ETRI Debug Point", log.Fields{"Indication":oltIndication})
+	logger.Debugw(ctx, "Exit handle OltIndication - ETRI Debug Point", log.Fields{"Indication": oltIndication})
 	return nil
 }
 
 // nolint: gocyclo
 func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.Indication) {
-  logger.Debugw(ctx, "Check Recevice Indication - ETRI Debug Point", log.Fields{"Indication":indication})
+	logger.Debugw(ctx, "Check Recevice Indication - ETRI Debug Point", log.Fields{"Indication": indication})
 	raisedTs := time.Now().Unix()
 	switch indication.Data.(type) {
 	case *oop.Indication_OltInd:
@@ -570,11 +570,11 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 
 		intfInd := indication.GetIntfInd()
 		go func() {
-      logger.Debugw(ctx, "Enter handle IntfIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+			logger.Debugw(ctx, "Enter handle IntfIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 			if err := dh.addPort(ctx, intfInd.GetIntfId(), voltha.Port_PON_OLT, intfInd.GetOperState()); err != nil {
 				_ = olterrors.NewErrAdapter("handle-indication-error-IntfIndication-addPort ETRI Debug Point", log.Fields{"type": "interface", "device-id": dh.device.Id}, err).Log()
 			}
-      logger.Debugw(ctx, "Exit handle IntfIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+			logger.Debugw(ctx, "Exit handle IntfIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 		}()
 		logger.Infow(ctx, "received-interface-indication", log.Fields{"InterfaceInd": intfInd, "device-id": dh.device.Id})
 	case *oop.Indication_IntfOperInd:
@@ -584,22 +584,22 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		intfOperInd := indication.GetIntfOperInd()
 		if intfOperInd.GetType() == "nni" {
 			go func() {
-        logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 				if err := dh.addPort(ctx, intfOperInd.GetIntfId(), voltha.Port_ETHERNET_NNI, intfOperInd.GetOperState()); err != nil {
 					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort ETRI Debug Point", log.Fields{"type": "interface-oper-nni", "device-id": dh.device.Id}, err).Log()
 				}
-        logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 			}()
 		} else if intfOperInd.GetType() == "pon" {
 			// TODO: Check what needs to be handled here for When PON PORT down, ONU will be down
 			// Handle pon port update
 			go func() {
-        logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Enter handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 				if err := dh.addPort(ctx, intfOperInd.GetIntfId(), voltha.Port_PON_OLT, intfOperInd.GetOperState()); err != nil {
 					_ = olterrors.NewErrAdapter("handle-indication-error-IntfOperIndication-addPort ETRI Debug Point", log.Fields{"type": "interface-oper-pon", "device-id": dh.device.Id}, err).Log()
 				}
-        logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Exit handle IntfOperIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 			}()
 			go dh.eventMgr.oltIntfOperIndication(ctx, indication.GetIntfOperInd(), dh.device.Id, raisedTs)
 		}
@@ -628,10 +628,10 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		omciInd := indication.GetOmciInd()
 		logger.Debugw(ctx, "received-omci-indication", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id})
 		go func() {
-      logger.Debugw(ctx, "Enter handle OmciIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+			logger.Debugw(ctx, "Enter handle OmciIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 			if err := dh.omciIndication(ctx, omciInd); err != nil {
 				_ = olterrors.NewErrAdapter("handle-indication-error", log.Fields{"type": "omci", "device-id": dh.device.Id}, err).Log()
-        logger.Debugw(ctx, "Exit handle OmciIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Exit handle OmciIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 			}
 		}()
@@ -660,11 +660,11 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		}
 
 		go func() {
-      logger.Debugw(ctx, "Enter handle PacketIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+			logger.Debugw(ctx, "Enter handle PacketIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 			if err := dh.handlePacketIndication(ctx, pktInd); err != nil {
 				_ = olterrors.NewErrAdapter("handle-indication-error", log.Fields{"type": "packet", "device-id": dh.device.Id}, err).Log()
-      logger.Debugw(ctx, "Exit handle PacketIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+				logger.Debugw(ctx, "Exit handle PacketIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 			}
 		}()
@@ -673,10 +673,10 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 		defer span.Finish()
 
 		portStats := indication.GetPortStats()
-    logger.Debugw(ctx, "Enter handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+		logger.Debugw(ctx, "Enter handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 		go dh.portStats.PortStatisticsIndication(ctx, portStats, dh.totalPonPorts)
-    logger.Debugw(ctx, "Exit handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+		logger.Debugw(ctx, "Exit handle PortStatsIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 	case *oop.Indication_FlowStats:
 		span, ctx := log.CreateChildSpan(ctx, "flow-stats-indication", log.Fields{"device-id": dh.device.Id})
@@ -690,9 +690,9 @@ func (dh *DeviceHandler) handleIndication(ctx context.Context, indication *oop.I
 
 		alarmInd := indication.GetAlarmInd()
 		logger.Infow(ctx, "received-alarm-indication", log.Fields{"AlarmInd": alarmInd, "device-id": dh.device.Id})
-    logger.Debugw(ctx, "Enter handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+		logger.Debugw(ctx, "Enter handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 		go dh.eventMgr.ProcessEvents(ctx, alarmInd, dh.device.Id, raisedTs)
-    logger.Debugw(ctx, "Exit handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication":indication})
+		logger.Debugw(ctx, "Exit handle AlarmIndication - ETRI Debug Point", log.Fields{"Indication": indication})
 
 	}
 }
@@ -991,78 +991,78 @@ func (dh *DeviceHandler) populateDeviceInfo(ctx context.Context) (*oop.DeviceInf
 		return nil, olterrors.NewErrInvalidValue(log.Fields{"device": nil}, nil)
 	}
 
-//  if &deviceInfo.OnuIdStart ==nil{
-//    logger.Debugw(ctx, "OnuIdStart nil", log.Fields{"device-id": dh.device.Id})
-//
-//    deviceInfo.OnuIdStart = 0
-//  }
-//  if &deviceInfo.OnuIdEnd ==nil{
-//    logger.Debugw(ctx, "OnuIdEnd nil", log.Fields{"device-id": dh.device.Id})
-//    deviceInfo.OnuIdEnd = deviceInfo.OnuIdStart+31
-//  }
-//  if &deviceInfo.AllocIdStart ==nil{
-//    logger.Debugw(ctx, "AllocIdStart nil", log.Fields{"device-id": dh.device.Id})
-//    deviceInfo.AllocIdStart =1024
-//  }
-//  if &deviceInfo.AllocIdEnd ==nil{
-//    logger.Debugw(ctx, "AllocIdEnd nil", log.Fields{"device-id": dh.device.Id})
-//    deviceInfo.AllocIdEnd =deviceInfo.AllocIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4
-//  }
-//  if &deviceInfo.GemportIdStart ==nil{
-//    logger.Debugw(ctx, "GemportIdStart nil", log.Fields{"device-id": dh.device.Id})
-//    deviceInfo.GemportIdStart= 1024
-//  }
-//  if &deviceInfo.GemportIdEnd ==nil{
-//    logger.Debugw(ctx, "GemportIdEnd nil", log.Fields{"device-id": dh.device.Id}  )
-//    deviceInfo.GemportIdEnd = deviceInfo.GemportIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4 * 8
-//
-//  }
+	//  if &deviceInfo.OnuIdStart ==nil{
+	//    logger.Debugw(ctx, "OnuIdStart nil", log.Fields{"device-id": dh.device.Id})
+	//
+	//    deviceInfo.OnuIdStart = 0
+	//  }
+	//  if &deviceInfo.OnuIdEnd ==nil{
+	//    logger.Debugw(ctx, "OnuIdEnd nil", log.Fields{"device-id": dh.device.Id})
+	//    deviceInfo.OnuIdEnd = deviceInfo.OnuIdStart+31
+	//  }
+	//  if &deviceInfo.AllocIdStart ==nil{
+	//    logger.Debugw(ctx, "AllocIdStart nil", log.Fields{"device-id": dh.device.Id})
+	//    deviceInfo.AllocIdStart =1024
+	//  }
+	//  if &deviceInfo.AllocIdEnd ==nil{
+	//    logger.Debugw(ctx, "AllocIdEnd nil", log.Fields{"device-id": dh.device.Id})
+	//    deviceInfo.AllocIdEnd =deviceInfo.AllocIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4
+	//  }
+	//  if &deviceInfo.GemportIdStart ==nil{
+	//    logger.Debugw(ctx, "GemportIdStart nil", log.Fields{"device-id": dh.device.Id})
+	//    deviceInfo.GemportIdStart= 1024
+	//  }
+	//  if &deviceInfo.GemportIdEnd ==nil{
+	//    logger.Debugw(ctx, "GemportIdEnd nil", log.Fields{"device-id": dh.device.Id}  )
+	//    deviceInfo.GemportIdEnd = deviceInfo.GemportIdStart +(deviceInfo.OnuIdEnd-deviceInfo.OnuIdStart+1)*4 * 8
+	//
+	//  }
 
-  if deviceInfo.FlowIdStart == 0 && deviceInfo.FlowIdEnd==0 && (&deviceInfo.Technology==nil||deviceInfo.Technology==""){
-    logger.Debugw(ctx, "FlowIdStart, FlowIdEnd 0", log.Fields{"device-id": dh.device.Id})
-    deviceInfo.FlowIdStart=1
-    deviceInfo.FlowIdEnd=2
-    deviceInfo.Technology="ETRI-PON"
-  }
-//  if &deviceInfo.FlowIdEnd ==nil{
-//    logger.Debugw(ctx, "FlowIdEnd nil", log.Fields{"device-id": dh.device.Id})
-//    deviceInfo.FlowIdEnd = deviceInfo.FlowIdStart+1
-//  }
-  if deviceInfo.Ranges ==nil||len(deviceInfo.Ranges)==0{
-    logger.Debugw(ctx, "deviceRange nil", log.Fields{"device-id": dh.device.Id})
-    deviceInfo.Ranges= []*oop.DeviceInfo_DeviceResourceRanges{
-       {
-         IntfIds:    []uint32{0},
-         Technology: "ETRI-PON",
-         Pools: []*oop.DeviceInfo_DeviceResourceRanges_Pool{
-           {
-             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ONU_ID,
-             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
-             Start:   deviceInfo.OnuIdStart,
-             End:     deviceInfo.OnuIdEnd,
-           },
-           {
-             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ALLOC_ID,
-             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
-             Start:   deviceInfo.AllocIdStart,
-             End:     deviceInfo.AllocIdEnd,
-           },
-           {
-             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_GEMPORT_ID,
-             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
-             Start:   deviceInfo.GemportIdStart,
-             End:     deviceInfo.GemportIdEnd,
-           },
-           {
-             Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_FLOW_ID,
-             Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_SHARED_BY_ALL_INTF_ALL_TECH,
-             Start:   deviceInfo.FlowIdStart,
-             End:     deviceInfo.FlowIdEnd,
-           },
-         },
-       },
-     }
-  }
+	if deviceInfo.FlowIdStart == 0 && deviceInfo.FlowIdEnd == 0 && (&deviceInfo.Technology == nil || deviceInfo.Technology == "") {
+		logger.Debugw(ctx, "FlowIdStart, FlowIdEnd 0", log.Fields{"device-id": dh.device.Id})
+		deviceInfo.FlowIdStart = 1
+		deviceInfo.FlowIdEnd = 2
+		deviceInfo.Technology = "ETRI-PON"
+	}
+	//  if &deviceInfo.FlowIdEnd ==nil{
+	//    logger.Debugw(ctx, "FlowIdEnd nil", log.Fields{"device-id": dh.device.Id})
+	//    deviceInfo.FlowIdEnd = deviceInfo.FlowIdStart+1
+	//  }
+	if deviceInfo.Ranges == nil || len(deviceInfo.Ranges) == 0 {
+		logger.Debugw(ctx, "deviceRange nil", log.Fields{"device-id": dh.device.Id})
+		deviceInfo.Ranges = []*oop.DeviceInfo_DeviceResourceRanges{
+			{
+				IntfIds:    []uint32{0},
+				Technology: "ETRI-PON",
+				Pools: []*oop.DeviceInfo_DeviceResourceRanges_Pool{
+					{
+						Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ONU_ID,
+						Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+						Start:   deviceInfo.OnuIdStart,
+						End:     deviceInfo.OnuIdEnd,
+					},
+					{
+						Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_ALLOC_ID,
+						Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+						Start:   deviceInfo.AllocIdStart,
+						End:     deviceInfo.AllocIdEnd,
+					},
+					{
+						Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_GEMPORT_ID,
+						Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_DEDICATED_PER_INTF,
+						Start:   deviceInfo.GemportIdStart,
+						End:     deviceInfo.GemportIdEnd,
+					},
+					{
+						Type:    oop.DeviceInfo_DeviceResourceRanges_Pool_FLOW_ID,
+						Sharing: oop.DeviceInfo_DeviceResourceRanges_Pool_SHARED_BY_ALL_INTF_ALL_TECH,
+						Start:   deviceInfo.FlowIdStart,
+						End:     deviceInfo.FlowIdEnd,
+					},
+				},
+			},
+		}
+	}
 	logger.Debugw(ctx, "fetched-device-info", log.Fields{"deviceInfo": deviceInfo, "device-id": dh.device.Id})
 	dh.device.Root = true
 	dh.device.Vendor = deviceInfo.Vendor
@@ -1071,7 +1071,7 @@ func (dh *DeviceHandler) populateDeviceInfo(ctx context.Context) (*oop.DeviceInf
 	dh.device.HardwareVersion = deviceInfo.HardwareVersion
 	dh.device.FirmwareVersion = deviceInfo.FirmwareVersion
 
-	if deviceInfo.DeviceId == "" ||strings.Count(deviceInfo.DeviceId, ".")>0 {
+	if deviceInfo.DeviceId == "" || strings.Count(deviceInfo.DeviceId, ".") > 0 {
 		logger.Warnw(ctx, "no-device-id-provided-using-host", log.Fields{"hostport": dh.device.GetHostAndPort()})
 		host := strings.Split(dh.device.GetHostAndPort(), ":")[0]
 		genmac, err := generateMacFromHost(ctx, host)
@@ -1195,7 +1195,7 @@ func (dh *DeviceHandler) omciIndication(ctx context.Context, omciInd *oop.OmciIn
 		logger.Debugw(ctx, "recv-omci-msg", log.Fields{"intf-id": omciInd.IntfId, "onu-id": omciInd.OnuId, "device-id": dh.device.Id,
 			"omci-transaction-id": transid, "omci-msg": hex.EncodeToString(omciInd.Pkt)})
 	}
-//  return nil
+	//  return nil
 	onuKey := dh.formOnuKey(omciInd.IntfId, omciInd.OnuId)
 
 	if onuInCache, ok := dh.onus.Load(onuKey); !ok {
@@ -1242,6 +1242,7 @@ func (dh *DeviceHandler) omciIndication(ctx context.Context, omciInd *oop.OmciIn
 	}
 	return nil
 }
+
 //
 // //ProcessInterAdapterMessage sends the proxied messages to the target device
 // // If the proxy address is not found in the unmarshalled message, it first fetches the onu device for which the message
@@ -1315,12 +1316,12 @@ func (dh *DeviceHandler) sendProxiedMessage(ctx context.Context, onuDevice *volt
 	transid := extractOmciTransactionID(omciMsg.Message)
 	logger.Debugw(ctx, "sent-omci-msg", log.Fields{"intf-id": intfID, "onu-id": onuID,
 		"omciTransactionID": transid, "omciMsg": string(omciMessage.Pkt)})
-  omciDetail, _, omciErr := omcilib.ParseOpenOltOmciPacket(omciMessage.Pkt)
-  if omciErr!=nil{
-    logger.Errorw(ctx, "Omci Request Parsing Error", log.Fields{"omciMsg": string(omciMessage.Pkt)})
-    panic(omciErr)
-  }
-  logger.Debugw(ctx, "Omci Request Detail", log.Fields{"Omci Detail": omciDetail})
+	omciDetail, _, omciErr := omcilib.ParseOpenOltOmciPacket(omciMessage.Pkt)
+	if omciErr != nil {
+		logger.Errorw(ctx, "Omci Request Parsing Error", log.Fields{"omciMsg": string(omciMessage.Pkt)})
+		panic(omciErr)
+	}
+	logger.Debugw(ctx, "Omci Request Detail", log.Fields{"Omci Detail": omciDetail})
 	_, err := dh.Client.OmciMsgOut(log.WithSpanFromContext(context.Background(), ctx), omciMessage)
 	if err != nil {
 		return olterrors.NewErrCommunication("omci-send-failed", log.Fields{
@@ -1353,7 +1354,7 @@ func (dh *DeviceHandler) activateONU(ctx context.Context, intfID uint32, onuID i
 }
 
 func (dh *DeviceHandler) onuDiscIndication(ctx context.Context, onuDiscInd *oop.OnuDiscIndication) error {
-  logger.Debugw(ctx, "Enter onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
+	logger.Debugw(ctx, "Enter onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd": onuDiscInd})
 	channelID := onuDiscInd.GetIntfId()
 	parentPortNo := plt.IntfIDToPortNo(onuDiscInd.GetIntfId(), voltha.Port_PON_OLT)
 
@@ -1501,12 +1502,12 @@ func (dh *DeviceHandler) onuDiscIndication(ctx context.Context, onuDiscInd *oop.
 			"device-id":     onuDevice.Id,
 			"serial-number": sn}, err)
 	}
-  logger.Debugw(ctx, "Exit onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd":onuDiscInd})
+	logger.Debugw(ctx, "Exit onuDiscIndication Function - ETRI Debug Point", log.Fields{"onuDiscInd": onuDiscInd})
 	return nil
 }
 
 func (dh *DeviceHandler) onuIndication(ctx context.Context, onuInd *oop.OnuIndication) error {
-  logger.Debugw(ctx, "Enter onuIndication Function - ETRI Debug Point", log.Fields{"onuInd":onuInd})
+	logger.Debugw(ctx, "Enter onuIndication Function - ETRI Debug Point", log.Fields{"onuInd": onuInd})
 
 	ponPort := plt.IntfIDToPortNo(onuInd.GetIntfId(), voltha.Port_PON_OLT)
 	var onuDevice *voltha.Device
@@ -1573,13 +1574,13 @@ func (dh *DeviceHandler) onuIndication(ctx context.Context, onuInd *oop.OnuIndic
 	if err := dh.updateOnuStates(ctx, onuDevice, onuInd); err != nil {
 		return olterrors.NewErrCommunication("state-update-failed", errFields, err)
 	}
-  logger.Debugw(ctx, "Exit onuIndication Function - ETRI Debug Point", log.Fields{"onuInd":onuInd})
+	logger.Debugw(ctx, "Exit onuIndication Function - ETRI Debug Point", log.Fields{"onuInd": onuInd})
 	return nil
 }
 
 func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.Device, onuInd *oop.OnuIndication) error {
-  logger.Debugw(ctx, "Enter updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
-  logger.Debugw(ctx, "onu-indication-for-state", log.Fields{"onuIndication": onuInd, "device-id": onuDevice.Id, "operStatus": onuDevice.OperStatus, "adminStatus": onuDevice.AdminState})
+	logger.Debugw(ctx, "Enter updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd": onuInd, "onuDevice": onuDevice})
+	logger.Debugw(ctx, "onu-indication-for-state", log.Fields{"onuIndication": onuInd, "device-id": onuDevice.Id, "operStatus": onuDevice.OperStatus, "adminStatus": onuDevice.AdminState})
 	if onuInd.AdminState == "down" || onuInd.OperState == "down" {
 		// The ONU has gone admin_state "down" or oper_state "down" - we expect the ONU to send discovery again
 		// The ONU admin_state is "up" while "oper_state" is down in cases where ONU activation fails. In this case
@@ -1610,7 +1611,7 @@ func (dh *DeviceHandler) updateOnuStates(ctx context.Context, onuDevice *voltha.
 	default:
 		return olterrors.NewErrInvalidValue(log.Fields{"oper-state": onuInd.OperState}, nil)
 	}
-  logger.Debugw(ctx, "Exit updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd":onuInd, "onuDevice": onuDevice})
+	logger.Debugw(ctx, "Exit updateOnuState Function - ETRI Debug Point", log.Fields{"onuInd": onuInd, "onuDevice": onuDevice})
 	return nil
 }
 
@@ -2270,7 +2271,7 @@ func startHeartbeatCheck(ctx context.Context, dh *DeviceHandler) {
 					log.Fields{"signature": heartBeat,
 						"device-id": dh.device.Id})
 			}
-      cancel()
+			cancel()
 		case <-dh.stopHeartbeatCheck:
 			logger.Debugw(ctx, "ETRI DEBUG stopping-heartbeat-check", log.Fields{"device-id": dh.device.Id})
 			return
@@ -2628,8 +2629,7 @@ func (dh *DeviceHandler) getPonIfFromFlow(flow *of.OfpFlowStats) uint32 {
 }
 
 func (dh *DeviceHandler) getOnuIndicationChannel(ctx context.Context, intfID uint32) chan onuIndicationMsg {
-  logger.Debugw(ctx, "Enter getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID":intfID})
-
+	logger.Debugw(ctx, "Enter getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID": intfID})
 
 	dh.perPonOnuIndicationChannelLock.Lock()
 	if ch, ok := dh.perPonOnuIndicationChannel[intfID]; ok {
@@ -2647,7 +2647,7 @@ func (dh *DeviceHandler) getOnuIndicationChannel(ctx context.Context, intfID uin
 	dh.perPonOnuIndicationChannelLock.Unlock()
 	go dh.onuIndicationsRoutine(&channels)
 
-  logger.Debugw(ctx, "Exit getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID":intfID})
+	logger.Debugw(ctx, "Exit getOnuIndicationChannel Function - ETRI Debug Point", log.Fields{"intfID": intfID})
 	return channels.indicationChannel
 
 }
@@ -2668,10 +2668,10 @@ func (dh *DeviceHandler) putOnuIndicationToChannel(ctx context.Context, indicati
 		indication: indication,
 	}
 	logger.Debugw(ctx, "put-onu-indication-to-channel", log.Fields{"indication": indication, "intfID": intfID})
-  logger.Debugw(ctx, "Enter putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication":indication})
+	logger.Debugw(ctx, "Enter putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication": indication})
 	// Send the onuIndication on the ONU channel
 	dh.getOnuIndicationChannel(ctx, intfID) <- ind
-  logger.Debugw(ctx, "Exit putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication":indication})
+	logger.Debugw(ctx, "Exit putOnuIndicationToChannel Function - ETRI Debug Point", log.Fields{"Indication": indication})
 }
 
 func (dh *DeviceHandler) onuIndicationsRoutine(onuChannels *onuIndicationChannels) {
@@ -3131,21 +3131,20 @@ func (dh *DeviceHandler) sendOmciIndicationToChildAdapter(ctx context.Context, c
 	subCtx, cancel := context.WithTimeout(log.WithSpanFromContext(context.Background(), ctx), dh.cfg.RPCTimeout)
 	defer cancel()
 
-  //var omciMessage *oop.OmciMsg
+	//var omciMessage *oop.OmciMsg
 	hexPkt := make([]byte, hex.EncodedLen(len(response.Message)))
 	hex.Encode(hexPkt, response.Message)
-//	omciMessage = &oop.OmciMsg{IntfId: intfID, OnuId: onuID, Pkt: hexPkt}
+	//	omciMessage = &oop.OmciMsg{IntfId: intfID, OnuId: onuID, Pkt: hexPkt}
 
-  omciDetail, _, err := omcilib.ParseOpenOltOmciPacket(hexPkt)
-  if err!=nil{
-    logger.Errorw(ctx, "Omci Response Parsing Error", log.Fields{"omci Pkt": hexPkt})
-    panic(err)
-  }
+	omciDetail, _, err := omcilib.ParseOpenOltOmciPacket(hexPkt)
+	if err != nil {
+		logger.Errorw(ctx, "Omci Response Parsing Error", log.Fields{"omci Pkt": hexPkt})
+		panic(err)
+	}
 	transid := extractOmciTransactionID(response.Message)
-  logger.Debugw(ctx, "Omci Response Detail", log.Fields{"Omci Detail": omciDetail, "transId": transid})
+	logger.Debugw(ctx, "Omci Response Detail", log.Fields{"Omci Detail": omciDetail, "transId": transid})
 	// TODO: Below logging illustrates the "stringify" of the omci Pkt.
 	//  once above is fixed this log line can change to just use hex.EncodeToString(omciMessage.Pkt)
-
 
 	_, err = aClient.OmciIndication(subCtx, response)
 	return err
@@ -3335,171 +3334,171 @@ func (dh *DeviceHandler) waitForTimeoutOrCompletion(wg *sync.WaitGroup, timeout 
 		return false // timed out
 	}
 }
-func(dh *DeviceHandler) BossGetVlan(ctx context.Context, request *boo.BossRequest) (*boo.GetVlanResponse, error){
+func (dh *DeviceHandler) BossGetVlan(ctx context.Context, request *boo.BossRequest) (*boo.GetVlanResponse, error) {
 	var err error
-	if dh.bossClient !=nil{
-		logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-	}else{
-		logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
 	}
 	response, err := dh.bossClient.GetVlan(ctx, request)
-	if err!=nil{
+	if err != nil {
 		return nil, err
 	}
 	return response, nil
 }
-func(dh *DeviceHandler) GetOltConnect(ctx context.Context, request *boo.BossRequest) (*boo.OltConnResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOltConnect(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOltConnect(ctx context.Context, request *boo.BossRequest) (*boo.OltConnResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOltConnect(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetOltDeviceInfo(ctx context.Context, request *boo.BossRequest) (*boo.OltDevResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOltDeviceInfo(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOltDeviceInfo(ctx context.Context, request *boo.BossRequest) (*boo.OltDevResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOltDeviceInfo(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetPmdTxDis(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetPmdTxDis(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetPmdTxDis(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetPmdTxDis(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetPmdTxdis(ctx context.Context, request *boo.BossRequest) (*boo.PmdTxdisResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetPmdTxdis(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetPmdTxdis(ctx context.Context, request *boo.BossRequest) (*boo.PmdTxdisResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetPmdTxdis(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetDevicePmdStatus(ctx context.Context, request *boo.BossRequest) (*boo.PmdStatusResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetDevicePmdStatus(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetDevicePmdStatus(ctx context.Context, request *boo.BossRequest) (*boo.PmdStatusResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetDevicePmdStatus(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetDevicePort(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetDevicePort(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetDevicePort(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetDevicePort(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetDevicePort(ctx context.Context, request *boo.BossRequest) (*boo.GetPortResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetDevicePort(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetDevicePort(ctx context.Context, request *boo.BossRequest) (*boo.GetPortResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetDevicePort(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) PortReset(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.PortReset(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) PortReset(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.PortReset(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetMtuSize(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetMtuSize(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetMtuSize(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetMtuSize(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetMtuSize(ctx context.Context, request *boo.BossRequest) (*boo.MtuSizeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetMtuSize(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetMtuSize(ctx context.Context, request *boo.BossRequest) (*boo.MtuSizeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetMtuSize(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetVlan(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetVlan(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetVlan(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetVlan(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 /*func(dh *DeviceHandler) GetVlan(ctx context.Context, request *boo.BossRequest) (*boo.GetVlanResponse, error){
@@ -3516,771 +3515,771 @@ func(dh *DeviceHandler) SetVlan(ctx context.Context, request *boo.BossRequest) (
       return response, nil
 }*/
 
-func(dh *DeviceHandler) SetLutMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetLutMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetLutMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetLutMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetLutMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetLutMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetLutMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetLutMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetAgingMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetAgingMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetAgingMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetAgingMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetAgingMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetAgingMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetAgingMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetAgingMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetAgingTime(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetAgingTime(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetAgingTime(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetAgingTime(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetAgingTime(ctx context.Context, request *boo.BossRequest) (*boo.AgingTimeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetAgingTime(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetAgingTime(ctx context.Context, request *boo.BossRequest) (*boo.AgingTimeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetAgingTime(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetDeviceMacInfo(ctx context.Context, request *boo.BossRequest) (*boo.DevMacInfoResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetDeviceMacInfo(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetDeviceMacInfo(ctx context.Context, request *boo.BossRequest) (*boo.DevMacInfoResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetDeviceMacInfo(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetSdnTable(ctx context.Context, request *boo.BossRequest) (*boo.SdnTableKeyResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetSdnTable(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetSdnTable(ctx context.Context, request *boo.BossRequest) (*boo.SdnTableKeyResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetSdnTable(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetSdnTable(ctx context.Context, request *boo.BossRequest) (*boo.SdnTableResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetSdnTable(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetSdnTable(ctx context.Context, request *boo.BossRequest) (*boo.SdnTableResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetSdnTable(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetLength(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetLength(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetLength(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetLength(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetLength(ctx context.Context, request *boo.BossRequest) (*boo.LengthResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetLength(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetLength(ctx context.Context, request *boo.BossRequest) (*boo.LengthResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetLength(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetQuietZone(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetQuietZone(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetQuietZone(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetQuietZone(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetQuietZone(ctx context.Context, request *boo.BossRequest) (*boo.QuietZoneResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetQuietZone(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetQuietZone(ctx context.Context, request *boo.BossRequest) (*boo.QuietZoneResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetQuietZone(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetFecMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetFecMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetFecMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetFecMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetFecMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetFecMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetFecMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetFecMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) AddOnu(ctx context.Context, request *boo.BossRequest) (*boo.AddOnuResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.AddOnu(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) AddOnu(ctx context.Context, request *boo.BossRequest) (*boo.AddOnuResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.AddOnu(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) DeleteOnu(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.DeleteOnu25G(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) DeleteOnu(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.DeleteOnu25G(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) AddOnuSla(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.AddOnuSla(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) AddOnuSla(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.AddOnuSla(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) ClearOnuSla(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.ClearOnuSla(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) ClearOnuSla(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.ClearOnuSla(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetSlaTable(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetSlaTable(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetSlaTable(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetSlaTable(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetOnuAllocid(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetOnuAllocid(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetOnuAllocid(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetOnuAllocid(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) DelOnuAllocid(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.DelOnuAllocid(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) DelOnuAllocid(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.DelOnuAllocid(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetOnuVssn(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetOnuVssn(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetOnuVssn(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetOnuVssn(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetOnuVssn(ctx context.Context, request *boo.BossRequest) (*boo.OnuVssnResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOnuVssn(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOnuVssn(ctx context.Context, request *boo.BossRequest) (*boo.OnuVssnResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOnuVssn(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetOnuDistance(ctx context.Context, request *boo.BossRequest) (*boo.OnuDistResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOnuDistance(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOnuDistance(ctx context.Context, request *boo.BossRequest) (*boo.OnuDistResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOnuDistance(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetBurstDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetBurstDelimiter(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetBurstDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetBurstDelimiter(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetBurstDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.BurstDelimitResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetBurstDelimiter(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetBurstDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.BurstDelimitResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetBurstDelimiter(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetBurstPreamble(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetBurstPreamble(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetBurstPreamble(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetBurstPreamble(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetBurstPreamble(ctx context.Context, request *boo.BossRequest) (*boo.BurstPreambleResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetBurstPreamble(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetBurstPreamble(ctx context.Context, request *boo.BossRequest) (*boo.BurstPreambleResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetBurstPreamble(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetBurstVersion(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetBurstVersion(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetBurstVersion(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetBurstVersion(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetBurstVersion(ctx context.Context, request *boo.BossRequest) (*boo.BurstVersionResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetBurstVersion(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetBurstVersion(ctx context.Context, request *boo.BossRequest) (*boo.BurstVersionResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetBurstVersion(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetBurstProfile(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetBurstProfile(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetBurstProfile(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetBurstProfile(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetBurstProfile(ctx context.Context, request *boo.BossRequest) (*boo.BurstProfileResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetBurstProfile(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetBurstProfile(ctx context.Context, request *boo.BossRequest) (*boo.BurstProfileResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetBurstProfile(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetRegisterStatus(ctx context.Context, request *boo.BossRequest) (*boo.RegisterStatusResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetRegisterStatus(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetRegisterStatus(ctx context.Context, request *boo.BossRequest) (*boo.RegisterStatusResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetRegisterStatus(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetOnuInfo(ctx context.Context, request *boo.BossRequest) (*boo.OnuInfoResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOnuInfo(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOnuInfo(ctx context.Context, request *boo.BossRequest) (*boo.OnuInfoResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOnuInfo(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetOmciStatus(ctx context.Context, request *boo.BossRequest) (*boo.StatusResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetOmciStatus(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetOmciStatus(ctx context.Context, request *boo.BossRequest) (*boo.StatusResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetOmciStatus(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetDsOmciOnu(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetDsOmciOnu(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetDsOmciOnu(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetDsOmciOnu(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetDsOmciData(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetDsOmciData(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetDsOmciData(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetDsOmciData(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetUsOmciData(ctx context.Context, request *boo.BossRequest) (*boo.OmciDataResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetUsOmciData(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetUsOmciData(ctx context.Context, request *boo.BossRequest) (*boo.OmciDataResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetUsOmciData(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetTod(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetTod(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetTod(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetTod(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetTod(ctx context.Context, request *boo.BossRequest) (*boo.TodResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetTod(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetTod(ctx context.Context, request *boo.BossRequest) (*boo.TodResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetTod(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetDataMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetDataMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetDataMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetDataMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetDataMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetDataMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetDataMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetDataMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetFecDecMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetFecDecMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetFecDecMode(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetFecDecMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetFecDecMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetFecDecMode(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetFecDecMode(ctx context.Context, request *boo.BossRequest) (*boo.ModeResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetFecDecMode(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetDelimiter(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetDelimiter(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.FecDecResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetDelimiter(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetDelimiter(ctx context.Context, request *boo.BossRequest) (*boo.FecDecResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetDelimiter(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetErrorPermit(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetErrorPermit(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetErrorPermit(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetErrorPermit(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetErrorPermit(ctx context.Context, request *boo.BossRequest) (*boo.ErrorPermitResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetErrorPermit(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetErrorPermit(ctx context.Context, request *boo.BossRequest) (*boo.ErrorPermitResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetErrorPermit(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetPmControl(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetPmControl(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetPmControl(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetPmControl(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetPmControl(ctx context.Context, request *boo.BossRequest) (*boo.PmControlResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetPmControl(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetPmControl(ctx context.Context, request *boo.BossRequest) (*boo.PmControlResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetPmControl(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetPmTable(ctx context.Context, request *boo.BossRequest) (*boo.PmTableResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetPmTable(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetPmTable(ctx context.Context, request *boo.BossRequest) (*boo.PmTableResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetPmTable(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetSAOn(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetSAOn(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetSAOn(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetSAOn(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetSAOff(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetSAOff(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetSAOff(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetSAOff(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
 func (dh *DeviceHandler) CreateDeviceHandler(ctx context.Context, device *voltha.Device) error {
-//	dh.transitionMap = NewTransitionMap(dh)
-//	logger.Infow(ctx, "adopt-device", log.Fields{"device-id": device.Id, "Address": device.GetHostAndPort()})
-//	dh.transitionMap.Handle(ctx, DeviceInit)
-//
-//	// Now, set the initial PM configuration for that device
-//	if err := dh.coreProxy.DevicePMConfigUpdate(ctx, dh.metrics.ToPmConfigs()); err != nil {
-//		_ = olterrors.NewErrAdapter("error-updating-performance-metrics", log.Fields{"device-id": device.Id}, err).LogAt(log.ErrorLevel)
-//	}
+	//	dh.transitionMap = NewTransitionMap(dh)
+	//	logger.Infow(ctx, "adopt-device", log.Fields{"device-id": device.Id, "Address": device.GetHostAndPort()})
+	//	dh.transitionMap.Handle(ctx, DeviceInit)
+	//
+	//	// Now, set the initial PM configuration for that device
+	//	if err := dh.coreProxy.DevicePMConfigUpdate(ctx, dh.metrics.ToPmConfigs()); err != nil {
+	//		_ = olterrors.NewErrAdapter("error-updating-performance-metrics", log.Fields{"device-id": device.Id}, err).LogAt(log.ErrorLevel)
+	//	}
 	var err error
 	dh.clientCon, err = grpc.Dial(dh.device.GetHostAndPort(),
 		grpc.WithInsecure(),
@@ -4302,147 +4301,146 @@ func (dh *DeviceHandler) CreateDeviceHandler(ctx context.Context, device *voltha
 	return nil
 
 }
-func(dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetSliceBw(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.ExecResult, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetSliceBw(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.GetSliceBwResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetSliceBw(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetSliceBw(ctx context.Context, request *boo.BossRequest) (*boo.GetSliceBwResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetSliceBw(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SetSlaV2(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SetSlaV2(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
 
-func(dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetSlaV2(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) GetSlaV2(ctx context.Context, request *boo.BossRequest) (*boo.RepeatedSlaV2Response, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetSlaV2(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
-func(dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossRequest) (*boo.BossOmciResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.SendOmciData(ctx, request)
-      if err!=nil{
-          logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error":err})
-          return nil, err
-      }
-      return response, nil
+func (dh *DeviceHandler) SendOmciData(ctx context.Context, request *boo.BossRequest) (*boo.BossOmciResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.SendOmciData(ctx, request)
+	if err != nil {
+		logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error": err})
+		return nil, err
+	}
+	return response, nil
 }
-func(dh *DeviceHandler) SendActiveOnu(ctx context.Context, request *voltha.ActiveOnu)error{
-  serialNum:= oop.SerialNumber{VendorId: []byte(""), VendorSpecific: []byte("")}
-  Onu := oop.Onu{IntfId: request.IntfId, OnuId: request.OnuId, SerialNumber: &serialNum, Pir: request.Pir, OmccEncryption: request.OmccEncryption}
-  if _, err := dh.Client.ActivateOnu(ctx, &Onu); err != nil {
-    st, _ := status.FromError(err)
-    if st.Code() == codes.AlreadyExists {
-      logger.Debugw(ctx, "onu-activation-in-progress", log.Fields{"SerialNumber": serialNum, "onu-id": request.OnuId, "device-id": dh.device.Id})
+func (dh *DeviceHandler) SendActiveOnu(ctx context.Context, request *voltha.ActiveOnu) error {
+	serialNum := oop.SerialNumber{VendorId: []byte(""), VendorSpecific: []byte("")}
+	Onu := oop.Onu{IntfId: request.IntfId, OnuId: request.OnuId, SerialNumber: &serialNum, Pir: request.Pir, OmccEncryption: request.OmccEncryption}
+	if _, err := dh.Client.ActivateOnu(ctx, &Onu); err != nil {
+		st, _ := status.FromError(err)
+		if st.Code() == codes.AlreadyExists {
+			logger.Debugw(ctx, "onu-activation-in-progress", log.Fields{"SerialNumber": serialNum, "onu-id": request.OnuId, "device-id": dh.device.Id})
 
-    } else {
-      return olterrors.NewErrAdapter("onu-activate-failed", log.Fields{"onu": Onu, "device-id": dh.device.Id}, err)
-    }
-  } else {
-    logger.Infow(ctx, "activated-onu", log.Fields{"SerialNumber": serialNum, "device-id": dh.device.Id})
-  }
-  return  nil
-}
-
-func(dh *DeviceHandler) SendOmciDatav2(ctx context.Context, request *voltha.OmciDatav2) error{
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      requestMsg:=&oop.OmciMsg{
-        IntfId: request.IntfId,
-        OnuId: request.OnuId,
-        Pkt: []byte(request.Pkt),
-      }
-      _, err = dh.Client.OmciMsgOut(ctx, requestMsg)
-      if err!=nil{
-          logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error":err})
-          return  err
-      }
-
-      return nil
-}
-func(dh *DeviceHandler) getEtcdList(ctx context.Context) (*voltha.EtcdList, error){
-      //var err error
-
-      listVal,err:=dh.resourceMgr[0].KVStore.List(ctx, "")
-//      var arr  []interface{}
-//      var value *kvstore.KVPair
-//      for key,val := range listVal{
-//        _=val
-//        value, err= dh.resourceMgr[0].KVStore.Get(ctx, key)
-//        if err!=nil{
-//          arr = append(arr,value)
-//        }else{
-//          logger.Error(ctx, "invalid Path", log.Fields{"path": key})
-//        }
-//      }
-      if err!=nil{
-        logger.Error(ctx,"errorrrrrr", log.Fields{"err":err})
-      }
-      returnVal := &voltha.EtcdList{
-        Ver1: fmt.Sprint(listVal),
-        Ver2: "",
-      }
-      return returnVal, nil
-}
-func(dh *DeviceHandler) GetPktInd(ctx context.Context, request *boo.BossRequest) (*boo.BossPktIndResponse, error){
-      var err error
-      if dh.bossClient !=nil{
-          logger.Infow(ctx,"bossClient is notnull.....", log.Fields{"deviceID":request.DeviceId})
-      }else{
-          logger.Infow(ctx,"bossClient is null.....", log.Fields{"deviceID":request.DeviceId})
-      }
-      response, err := dh.bossClient.GetPktInd(ctx, request)
-      if err!=nil{
-          return nil, err
-      }
-      return response, nil
+		} else {
+			return olterrors.NewErrAdapter("onu-activate-failed", log.Fields{"onu": Onu, "device-id": dh.device.Id}, err)
+		}
+	} else {
+		logger.Infow(ctx, "activated-onu", log.Fields{"SerialNumber": serialNum, "device-id": dh.device.Id})
+	}
+	return nil
 }
 
+func (dh *DeviceHandler) SendOmciDatav2(ctx context.Context, request *voltha.OmciDatav2) error {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	requestMsg := &oop.OmciMsg{
+		IntfId: request.IntfId,
+		OnuId:  request.OnuId,
+		Pkt:    []byte(request.Pkt),
+	}
+	_, err = dh.Client.OmciMsgOut(ctx, requestMsg)
+	if err != nil {
+		logger.Errorw(ctx, "error!!!!!!!!!!!!!!!!!!!", log.Fields{"Error": err})
+		return err
+	}
+
+	return nil
+}
+func (dh *DeviceHandler) getEtcdList(ctx context.Context) (*voltha.EtcdList, error) {
+	//var err error
+
+	listVal, err := dh.resourceMgr[0].KVStore.List(ctx, "")
+	//      var arr  []interface{}
+	//      var value *kvstore.KVPair
+	//      for key,val := range listVal{
+	//        _=val
+	//        value, err= dh.resourceMgr[0].KVStore.Get(ctx, key)
+	//        if err!=nil{
+	//          arr = append(arr,value)
+	//        }else{
+	//          logger.Error(ctx, "invalid Path", log.Fields{"path": key})
+	//        }
+	//      }
+	if err != nil {
+		logger.Error(ctx, "errorrrrrr", log.Fields{"err": err})
+	}
+	returnVal := &voltha.EtcdList{
+		Ver1: fmt.Sprint(listVal),
+		Ver2: "",
+	}
+	return returnVal, nil
+}
+func (dh *DeviceHandler) GetPktInd(ctx context.Context, request *boo.BossRequest) (*boo.BossPktIndResponse, error) {
+	var err error
+	if dh.bossClient != nil {
+		logger.Infow(ctx, "bossClient is notnull.....", log.Fields{"deviceID": request.DeviceId})
+	} else {
+		logger.Infow(ctx, "bossClient is null.....", log.Fields{"deviceID": request.DeviceId})
+	}
+	response, err := dh.bossClient.GetPktInd(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}

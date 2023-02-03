@@ -19,6 +19,9 @@ FROM --platform=linux/amd64 golang:1.16.3-alpine3.13 AS dev
 
 # Install required packages
 RUN apk add --no-cache build-base=0.5-r3
+#RUN go get github.com/go-delve/delve/cmd/dlv
+#RUN CGO_ENABLED=0 go get -ldflags '-s -w -extldflags -static' github.com/go-delve/delve/cmd/dlv
+RUN CGO_ENABLED=0 go install github.com/go-delve/delve/cmd/dlv@latest
 
 # Use Standard go build directory structure
 WORKDIR /go/src
@@ -54,14 +57,19 @@ WORKDIR /app
 # -------------
 # Image creation stage
 
-FROM --platform=linux/amd64 gcr.io/distroless/static:nonroot AS prod
+#FROM --platform=linux/amd64 gcr.io/distroless/static:nonroot AS prod
+FROM --platform=linux/amd64 ubuntu:18.04 AS prod
+#FROM alpine:3.12.0 AS prod
 
 # Set the working directory
 WORKDIR /app
-
+RUN apt update && apt install net-tools
 # Copy required files
 COPY --from=dev /app/openolt /app/openolt
+COPY --from=dev /go/bin/dlv /app/dlv
 
+RUN chmod 777 /app/dlv
+RUN chmod -R 777 /app
 # Label image
 ARG org_label_schema_version=unknown
 ARG org_label_schema_vcs_url=unknown
@@ -69,6 +77,8 @@ ARG org_label_schema_vcs_ref=unknown
 ARG org_label_schema_build_date=unknown
 ARG org_opencord_vcs_commit_date=unknown
 ARG org_opencord_vcs_dirty=unknown
+
+EXPOSE 8000 40000
 
 LABEL \
 org.label-schema.schema-version=1.0 \
@@ -80,4 +90,7 @@ org.label-schema.build-date=$org_label_schema_build_date \
 org.opencord.vcs-commit-date=$org_opencord_vcs_commit_date \
 org.opencord.vcs-dirty=$org_opencord_vcs_dirty
 
-USER nonroot:nonroot
+#USER nonroot:nonroot
+
+#CMD [ "/app/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient",  "exec", "/app/openolt"]
+#CMD ["echo HELLOWORLD"]

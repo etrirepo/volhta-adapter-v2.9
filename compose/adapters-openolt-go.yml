@@ -23,6 +23,12 @@ services:
         max-size: "10m"
         max-file: "3"
     command: [
+      "/app/dlv",
+      "--listen=:40000",
+      "--headless=true",
+      "--api-version=2",
+      "--accept-multiclient",
+      "exec",
       "/app/openolt",
       "--kafka_adapter_host=${DOCKER_HOST_IP}",
       "--kafka_adapter_port=9092",
@@ -34,6 +40,7 @@ services:
     ]
     ports:
       - "50062:50062"
+      - "40000:40000"
     networks:
     - default
 
